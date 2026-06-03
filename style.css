@@ -96,26 +96,8 @@ textarea{resize:vertical;min-height:60px}
 .btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
 .tbl-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow)}
 table{width:100%;border-collapse:collapse;font-size:13px;min-width:500px}
-th{padding:8px 10px;text-align:left;font-weight:700;font-size:10px;color:var(--text2);border-bottom:1px solid var(--border);background:var(--surface2);white-space:nowrap;text-transform:uppercase;letter-spacing:.04em}
-td{padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
-tr:last-child td{border-bottom:none}
-tbody tr:hover td{background:var(--surface2)}
-.empty-row td{text-align:center;padding:28px;color:var(--text3)}
-.tag{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px}
-.tag-sale{background:var(--green-bg);color:var(--green)}
-.tag-buy{background:var(--blue-bg);color:var(--blue)}
-.tag-krw{background:var(--amber-bg);color:var(--amber)}
-.tag-usd{background:var(--green-bg);color:var(--green)}
-.tag-jpy{background:var(--blue-bg);color:var(--blue)}
-.tag-eur{background:var(--purple-bg);color:var(--purple)}
-.cur-group{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
-.cur-btn{padding:4px 13px;border:1px solid var(--border2);border-radius:20px;background:var(--surface);cursor:pointer;font-size:12px;font-weight:700;color:var(--text2);font-family:inherit}
-.cur-btn.active{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
-.item-row{display:grid;grid-template-columns:2fr 70px 110px 110px 34px;gap:6px;align-items:center;margin-bottom:6px}
-.search-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
-.loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:28px;color:var(--text2)}
-.spinner{width:15px;height:15px;border:2px solid var(--border);border-top-color:var(--text);border-radius:50%;animation:spin .6s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
+th{padding:8px 10px;text-align:left;font-weight:700;font-size:10px;color:var(--text2);border-bottom:1px solid var(--border);background:var(--surface2);white-space:nowrap;letter-spacing:.04em}
+th:not(.no-col){text-transform:uppercase}
 .no-col{width:36px;text-align:center;color:var(--text3);font-size:12px;font-weight:600}
 /* ── 컬럼 설정 ── */
 .col-setting-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
