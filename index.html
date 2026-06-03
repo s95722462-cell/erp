@@ -117,6 +117,8 @@
       <span class="user-badge" id="user-badge"></span>
       <button class="logout-btn" onclick="doLogout()">로그아웃</button>
     </div>
+    <!-- 모바일 메뉴 버튼 (PC에선 숨김) -->
+    <button class="btn btn-sm mobile-menu-btn" onclick="openMobileMenu()" style="display:none;background:rgba(255,255,255,0.1);color:#fff;border-color:rgba(255,255,255,0.2)">☰ 메뉴</button>
   </div>
   <div class="nav">
     <button class="nav-btn active" onclick="goto('dash',this)">📊 대시보드</button>
@@ -230,7 +232,7 @@
 
     <!-- 매출장부 -->
     <div class="panel" id="panel-sales">
-      <div class="card no-print">
+      <div class="card no-print" id="sale-form-card">
         <div class="card-title">📈 매출 등록</div>
         <div class="form-grid">
           <div class="fg"><label>날짜</label><input type="date" id="sale-date"></div>
@@ -275,7 +277,7 @@
 
     <!-- 매입장부 -->
     <div class="panel" id="panel-purchase">
-      <div class="card no-print">
+      <div class="card no-print" id="buy-form-card">
         <div class="card-title">📥 매입 등록</div>
         <div class="form-grid">
           <div class="fg"><label>날짜</label><input type="date" id="buy-date"></div>
@@ -455,6 +457,14 @@
           <span style="font-size:11px;color:var(--text2);font-weight:400;text-transform:none;margin-left:8px">— 상단 드롭다운에서 사용할 회사를 선택할 수 있습니다</span>
         </div>
         <div class="company-cards" id="company-cards-list"></div>
+      </div>
+
+      <!-- 모바일 UI 설정 -->
+      <div class="card">
+        <div class="card-title">📱 모바일 UI 설정</div>
+        <label class="chk-item">
+          <input type="checkbox" id="toggle-mobile-topbar" onchange="toggleMobileTopbar()"> 모바일 상단바 상세메뉴 숨기기 (공간 확보)
+        </label>
       </div>
 
       <!-- 상세 설정 그리드 -->

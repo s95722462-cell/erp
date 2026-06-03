@@ -47,9 +47,8 @@ body{font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:var(
 
 /* ── 앱 ── */
 .app{display:flex;flex-direction:column;min-height:100vh}
-.topbar{display:flex;align-items:center;gap:10px;padding:0 20px;height:50px;background:var(--accent);color:var(--accent-fg);position:sticky;top:0;z-index:100;flex-wrap:wrap}
+.topbar{flex-shrink:0;display:flex;align-items:center;gap:10px;padding:0 20px;height:50px;background:var(--accent);color:var(--accent-fg);position:sticky;top:0;z-index:100;flex-wrap:wrap}
 .topbar-logo{font-size:18px;font-weight:800;letter-spacing:-0.5px}
-.topbar-logo span{opacity:.4;font-size:12px;font-weight:400;margin-left:6px}
 .company-switcher{display:flex;align-items:center;gap:6px;margin-left:8px}
 .company-sel{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:3px 10px;font-size:12px;font-family:inherit;cursor:pointer;max-width:160px}
 .company-sel option{background:#1a1917;color:#fff}
@@ -60,7 +59,7 @@ body{font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:var(
 .user-badge{font-size:12px;opacity:.6}
 .logout-btn{font-size:12px;padding:4px 10px;border:1px solid rgba(255,255,255,.25);border-radius:20px;background:none;color:#fff;cursor:pointer;font-family:inherit}
 
-.nav{display:flex;padding:0 14px;background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.nav{flex-shrink:0;display:flex;padding:0 14px;background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .nav::-webkit-scrollbar{display:none}
 .nav-btn{padding:11px 13px;border:none;background:none;cursor:pointer;font-size:13px;color:var(--text2);white-space:nowrap;border-bottom:2px solid transparent;transition:all .15s;font-family:inherit}
 .nav-btn.active{color:var(--text);border-bottom-color:var(--accent);font-weight:600}
@@ -214,6 +213,7 @@ tbody tr:hover td{background:var(--surface2)}
 
 /* ── 모바일 전용 ── */
 @media(max-width:768px){
+  .topbar { position: static !important; }
   .nav{display:none!important}
   .bottom-nav{display:flex!important}
   .topbar{height:46px;padding:0 12px}
@@ -221,8 +221,12 @@ tbody tr:hover td{background:var(--surface2)}
   .company-sel{max-width:110px;font-size:11px;padding:2px 6px}
   .user-badge{display:none}
   .logout-btn{font-size:11px;padding:3px 8px}
-  .content{padding:10px 10px 72px!important;max-width:100%!important}
+  .content{padding:60px 10px 80px!important}
   .card{padding:14px;margin-bottom:10px}
+  .alert-banner {
+    margin-top: 0;
+    font-size: 12px;
+  }
   .kpi-grid{grid-template-columns:repeat(2,1fr)!important;gap:8px}
   .kpi{padding:10px 12px}
   .kpi-val{font-size:17px}
@@ -236,6 +240,9 @@ tbody tr:hover td{background:var(--surface2)}
   .modal{padding:16px;max-height:95vh}
   .company-cards{grid-template-columns:1fr!important}
   .date-filter{gap:6px}
+  .card.no-print {
+    display: none;
+  }
 }
 
 /* ── 하단 네비게이션 (모바일) ── */
@@ -303,4 +310,9 @@ tbody tr:hover td{background:var(--surface2)}
 .m-card-lbl{color:var(--text2)}
 .m-card-val{font-weight:500;text-align:right}
 .m-card-actions{display:flex;gap:8px;margin-top:10px;padding-top:8px;border-top:1px solid var(--border)}
-.m-card-actions .btn{flex:1;justify-content:center}
+
+/* ── 모바일 UI 설정 (상단바 메뉴 최적화) ── */
+@media(max-width:768px){
+  .topbar-right { display: none !important; }
+  .mobile-menu-btn { display: block !important; }
+}

@@ -417,6 +417,7 @@ function afterLogin(){
   renderCompanyCards();
   loadSettingsToForm();
   loadSealForActiveCo();
+  initMobileUI(); // 모바일 UI 설정 초기화
   startListeners();
 }
 
@@ -1879,7 +1880,19 @@ window.resetCurrentCompanyData = async function() {
   }
 };
 
-// ── 모바일 FAB / 시트 ──
+// ── 모바일 메뉴 시트 ──
+window.openMobileMenu = function() {
+  document.getElementById('sheet-title-text').textContent = '메뉴';
+  const body = document.getElementById('sheet-body');
+  body.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button class="btn" onclick="openGlobalSearch();closeSheet()">🔍 통합 검색</button>
+      <button class="btn" onclick="toggleDarkMode();closeSheet()">🌓 테마 전환</button>
+      <button class="btn btn-danger" onclick="doLogout();closeSheet()">🚪 로그아웃</button>
+    </div>
+  `;
+  openSheet();
+};
 function isMobile(){ return window.innerWidth<=768; }
 
 window.openFab=function(){
@@ -1888,13 +1901,8 @@ window.openFab=function(){
   const id=activePanel.id.replace('panel-','');
   const titles={sales:'매출 등록',purchase:'매입 등록',customers:'거래처 등록',products:'품목 등록'};
   if(!titles[id]) return;
-  if(!isMobile()){
-    // PC에서는 해당 폼으로 스크롤
-    const card=activePanel.querySelector('.card');
-    if(card) card.scrollIntoView({behavior:'smooth'});
-    return;
-  }
-  // 모바일: 시트 열기
+  
+  // 모바일/PC 상관없이 시트 열기
   document.getElementById('sheet-title-text').textContent=titles[id];
   const body=document.getElementById('sheet-body');
 
@@ -1955,7 +1963,7 @@ window.openFab=function(){
         <div class="fg"><label>제조사</label><input id="ms-p-maker" placeholder="제조사"></div>
         <div class="fg"><label>기준단가</label><input id="ms-p-price" placeholder="0" oninput="fmtInput(this)"></div>
         <div class="fg"><label>통화</label><select id="ms-p-cur"><option>KRW</option><option>USD</option><option>JPY</option><option>EUR</option></select></div>
-        <div class="fg"><label>단위</label><input id="ms-p-unit" placeholder="EA/SET/BOX"></div>
+        <div class="fg"><label>단가</label><input id="ms-p-unit" placeholder="EA/SET/BOX"></div>
         <div class="fg"><label>초기재고</label><input type="number" id="ms-p-stock" value="0"></div>
         <div class="fg"><label>안전재고</label><input type="number" id="ms-p-safestock" value="0"></div>
       </div>
