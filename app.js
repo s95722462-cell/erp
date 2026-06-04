@@ -1257,54 +1257,91 @@ function makeOneCopy(items,label){
   const buyer=getBuyer();const co=getActiveCo();
   const no=document.getElementById('inv-no').value;
   const date=document.getElementById('inv-date').value;
-  const terms=document.getElementById('inv-terms').value||co.terms||'';
   const note=document.getElementById('inv-note').value;
-  const manager=document.getElementById('inv-manager').value;
-  const footer=co.footer||'본 거래명세서는 발행일로부터 30일 이내 결제 바랍니다.';
-  const empty=Math.max(0,8-items.length);
-  return `<div class="inv-a4">
-    <div class="inv-title">거 래 명 세 서</div>
-    <div class="inv-copy-label">${label}</div>
-    <div class="inv-meta-row">
-      <div class="inv-meta-item"><span class="inv-meta-label">No.</span><span class="inv-meta-val">${no}</span></div>
-      <div class="inv-meta-item"><span class="inv-meta-label">발행일</span><span class="inv-meta-val">${date}</span></div>
-      ${terms?`<div class="inv-meta-item"><span class="inv-meta-label">결제조건</span><span class="inv-meta-val">${terms}</span></div>`:''}
+  
+  // 도장 이미지 (Base64)
+  const sealHtml = sealImageBase64 ? `<img src="${sealImageBase64}">` : '직인';
+
+  const rowsHtml = items.map((it, i) => `
+    <tr>
+      <td class="text-center">${date.slice(5).replace('-', '/')}</td>
+      <td>${it.name} ${it.spec ? ' (' + it.spec + ')' : ''}</td>
+      <td class="text-right">${it.qty.toLocaleString()}</td>
+      <td class="text-right">${Math.round(it.unitPrice).toLocaleString()}</td>
+      <td class="text-right">${Math.round(it.amount).toLocaleString()}</td>
+      <td class="text-right">${Math.round(curCur === 'KRW' ? it.amount * 0.1 : 0).toLocaleString()}</td>
+      <td>${it.memo || ''}</td>
+    </tr>
+  `).join('');
+
+  // 빈 행 채우기 (최소 10줄)
+  const emptyCount = Math.max(0, 10 - items.length);
+  const emptyRows = Array(emptyCount).fill('<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>').join('');
+
+  return `
+    <div class="inv-trad">
+      <div style="display:flex; justify-content:flex-end; font-size:11px; color:#555; margin-bottom:-20px">PAGE : 1 / 1</div>
+      <div class="inv-trad-title">거 래 명 세 표</div>
+      <div class="inv-trad-label">[${label}]</div>
+
+      
+      <div class="inv-trad-top">
+        <div class="inv-trad-left">
+          <div class="row"><span class="lbl">일 자 :</span><span class="val">${date}</span></div>
+          <div class="row"><span class="lbl">거 래 처 :</span><span class="val">${buyer.name}</span></div>
+          <div class="row"><span class="lbl">주 소 :</span><span class="val">${buyer.addr || ''}</span></div>
+          <div class="row"><span class="lbl">전화번호 :</span><span class="val">${buyer.tel || ''}</span></div>
+        </div>
+        
+        <div class="inv-trad-right">
+          <div class="h-lbl">등록<br>번호</div><div class="h-val span-3">${co.bizno || ''}</div>
+          <div class="h-lbl">상 호</div><div class="h-val">${co.company || ''}</div>
+          <div class="h-lbl">성 명</div><div class="h-val">${co.ceo || ''}</div>
+          <div class="h-lbl">주 소</div><div class="h-val span-3">${co.addr || ''}</div>
+          <div class="h-lbl">업 태</div><div class="h-val">${co.biztype || ''}</div>
+          <div class="h-lbl">종 목</div><div class="h-val">${co.bizitem || ''}</div>
+          <div class="h-lbl">전화<br>번호</div><div class="h-val">${co.tel || ''}</div>
+          <div class="h-lbl">팩스<br>번호</div><div class="h-val">${co.fax || ''}</div>
+        </div>
+        <div class="inv-trad-seal">${sealHtml}</div>
+      </div>
+
+      <div class="inv-trad-total-box">
+        <div class="lbl">합계금액</div>
+        <div class="val">￦ ${total.toLocaleString()}</div>
+      </div>
+
+      <table class="inv-trad-table">
+        <thead>
+          <tr>
+            <th width="50">월/일</th>
+            <th>품 목 명 / 규 격</th>
+            <th width="50">수량</th>
+            <th width="100">단 가</th>
+            <th width="110">공급가액</th>
+            <th width="100">세 액</th>
+            <th width="120">비 고</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+          ${emptyRows}
+        </tbody>
+      </table>
+
+      <div class="inv-trad-footer">
+        <div class="f-lbl" style="width:100px; text-align:center">합 계</div>
+        <div class="f-val">${sub.toLocaleString()}</div>
+        <div class="f-val" style="border-left:1px solid #d32f2f">${vat.toLocaleString()}</div>
+      </div>
+
+      <div style="margin-top:15px; font-size:11px; color:#555">
+        ${note ? `<div>※ 비고: ${note}</div>` : ''}
+      </div>
     </div>
-    <div class="inv-parties">
-      <div class="inv-party-box"><div class="inv-party-title">공 급 자</div><div class="inv-party-body">
-        <div class="ipr"><span class="ipr-l">상호</span><span class="ipr-v">${co.company||'—'}</span></div>
-        <div class="ipr"><span class="ipr-l">사업자번호</span><span class="ipr-v">${co.bizno||'—'}</span></div>
-        <div class="ipr"><span class="ipr-l">대표자</span><span class="ipr-v">${co.ceo||'—'}</span></div>
-        <div class="ipr"><span class="ipr-l">업태/종목</span><span class="ipr-v">${co.biztype||''}${co.bizitem?' / '+co.bizitem:''}</span></div>
-        <div class="ipr"><span class="ipr-l">주소</span><span class="ipr-v">${co.addr||'—'}</span></div>
-        <div class="ipr"><span class="ipr-l">전화/팩스</span><span class="ipr-v">${co.tel||'—'}${co.fax?' / '+co.fax:''}</span></div>
-      </div></div>
-      <div class="inv-party-box"><div class="inv-party-title">공 급 받 는 자</div><div class="inv-party-body">
-        <div class="ipr"><span class="ipr-l">상호</span><span class="ipr-v">${buyer.name||'—'}</span></div>
-        <div class="ipr"><span class="ipr-l">사업자번호</span><span class="ipr-v">${buyer.bizno||'—'}</span></div>
-        <div class="ipr"><span class="ipr-l">대표자</span><span class="ipr-v">${buyer.ceo||'—'}</span></div>
-        <div class="ipr"><span class="ipr-l">주소</span><span class="ipr-v">${buyer.addr||'—'}</span></div>
-        <div class="ipr"><span class="ipr-l">전화</span><span class="ipr-v">${buyer.tel||'—'}</span></div>
-        ${manager?`<div class="ipr"><span class="ipr-l">담당자</span><span class="ipr-v">${manager}</span></div>`:''}
-      </div></div>
-    </div>
-    <table class="inv-table">
-      <thead><tr><th width="26">No</th><th>품목명</th><th width="44">수량</th><th width="85">단가(${curCur})</th><th width="95">금액(${curCur})</th></tr></thead>
-      <tbody>
-        ${items.map((it,i)=>`<tr><td>${i+1}</td><td class="tl">${it.name}</td><td>${it.qty.toLocaleString()}</td><td class="tr">${fmt(it.unitPrice)}</td><td class="tr">${fmt(it.amount)}</td></tr>`).join('')}
-        ${Array(empty).fill('<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td></tr>').join('')}
-      </tbody>
-    </table>
-    <div class="inv-totals">
-      <div class="itr"><span class="itr-l">공급가액</span><span class="itr-v">${fmt(sub)}</span></div>
-      ${curCur==='KRW'?`<div class="itr"><span class="itr-l">부가세(10%)</span><span class="itr-v">${fmt(vat)}</span></div>`:''}
-      <div class="itr"><span class="itr-l">합계(${curCur})</span><span class="itr-v">${fmt(total)}</span></div>
-    </div>
-    ${note?`<div class="inv-note">비고: ${note}</div>`:''}
-    <div class="inv-note">${footer}</div>
-    <div class="inv-seal">(인)<div class="inv-seal-box">직인</div></div>
-  </div>`;
+  `;
 }
+
 window.showInvoice=function(){
   const items=getItems();
   if(!items.length){alert('품목을 하나 이상 추가하세요');return;}
