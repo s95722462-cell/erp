@@ -571,6 +571,8 @@ function startListeners(){
     renderDash();
     renderSidebar('sale');
     renderSidebar('buy');
+    renderSidebar('inv');
+    renderSidebar('cust');
   });
   listen('products','products',()=>{renderProducts();renderStock();renderDash();});
   listen('sales','sales',()=>{renderSales();renderStock();renderDash();});
@@ -611,7 +613,13 @@ window.goto=function(id,btn){
   }
   if(id==='products') renderProducts();
   if(id==='stock') renderStock();
-  if(id==='invoice') populateSelects();
+  if(id==='invoice') {
+    populateSelects();
+    renderSidebar('inv');
+    if(!document.getElementById('inv-date').value) document.getElementById('inv-date').value = today();
+    const iTbody = document.getElementById('inv-items-tbody');
+    if(iTbody && iTbody.rows.length === 0) addErpRow('inv');
+  }
   if(id==='daily'){populateSelects();initDaily();}
   if(id==='settings'){loadSettingsToForm();renderCompanyCards();}
 };
@@ -792,6 +800,7 @@ function renderSidebar(type) {
   if (type === 'sale') { listEl = document.getElementById('sale-cust-list'); qId = 'sale-cust-search'; }
   else if (type === 'buy') { listEl = document.getElementById('buy-cust-list'); qId = 'buy-cust-search'; }
   else if (type === 'cust') { listEl = document.getElementById('cust-list-sidebar'); qId = 'cust-list-search'; }
+  else if (type === 'inv') { listEl = document.getElementById('inv-cust-list'); qId = 'inv-cust-search'; }
 
   if (!listEl) return;
   const q = (document.getElementById(qId)?.value || '').toLowerCase();
@@ -811,7 +820,7 @@ window.selectSidebarItem = function(type, id) {
   const c = cache.customers.find(x => x.id === id);
   if (!c) return;
 
-  const listId = type === 'sale' ? 'sale-cust-list' : (type === 'buy' ? 'buy-cust-list' : 'cust-list-sidebar');
+  const listId = type === 'sale' ? 'sale-cust-list' : (type === 'buy' ? 'buy-cust-list' : (type === 'inv' ? 'inv-cust-list' : 'cust-list-sidebar'));
   document.querySelectorAll(`#${listId} .sidebar-item`).forEach(el => el.classList.remove('active'));  
   const target = document.getElementById(`${type}-item-${id}`);
   if (target) target.classList.add('active');
@@ -826,6 +835,10 @@ window.selectSidebarItem = function(type, id) {
     document.getElementById('buy-vendor-id').value = c.id;
     document.getElementById('buy-bizno').value = c.bizno || '';
     document.getElementById('buy-ceo').value = c.contact || '';
+  } else if (type === 'inv') {
+    document.getElementById('inv-customer-name').value = c.name;
+    document.getElementById('inv-customer-id').value = c.id;
+    document.getElementById('inv-bizno').value = c.bizno || '';
   } else if (type === 'cust') {
     // 거래처 탭에서 선택 시 폼에 채우기
     document.getElementById('c-id').value = c.id;
@@ -1225,6 +1238,16 @@ function calcI(){
   });
 }
 function getItems(){
+  const erpTbody = document.getElementById('inv-items-tbody');
+  if (erpTbody && erpTbody.rows.length > 0) {
+    return Array.from(erpTbody.rows).map(r => {
+      const name = r.querySelector('.erp-item-name').value;
+      const qty = rawNum(r.querySelector('.erp-qty').value);
+      const price = rawNum(r.querySelector('.erp-price').value);
+      return { name, spec: '', qty, unitPrice: price, amount: qty * price, memo: r.querySelector('.erp-memo').value };
+    }).filter(i => i.qty > 0 && i.name);
+  }
+  
   return itemRows.map(id=>{
     const sel=document.querySelector('#'+id+' select');
     const opt=sel?.options[sel.selectedIndex];
@@ -1239,6 +1262,18 @@ function getItems(){
   }).filter(i=>i.qty>0);
 }
 function getBuyer(){
+  const name = document.getElementById('inv-customer-name')?.value;
+  if (name) {
+    return {
+      id: document.getElementById('inv-customer-id').value,
+      name: name,
+      bizno: document.getElementById('inv-bizno').value,
+      addr: '', // 상세 정보가 필요하면 캐시에서 더 가져올 수 있음
+      ceo: '',
+      tel: ''
+    };
+  }
+
   const sel=document.getElementById('inv-buyer-sel');
   const opt=sel.options[sel.selectedIndex];
   return{
@@ -1250,6 +1285,7 @@ function getBuyer(){
     tel:opt?.getAttribute('data-tel')||''
   };
 }
+
 function makeOneCopy(items,label){
   const sub=items.reduce((s,i)=>s+i.amount,0);
   const vat=curCur==='KRW'?Math.round(sub*.1):0;
