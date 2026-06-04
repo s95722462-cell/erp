@@ -295,6 +295,7 @@
         <button class="btn btn-sm" onclick="openColSettings('sales')" style="margin-left:auto">⚙️ 항목 설정</button>
       </div>
 
+
       <div class="search-row no-print">
         <input id="sales-q" placeholder="거래처 / 품목 검색..." oninput="renderSales()" style="max-width:200px">
         <select id="sales-cur-f" onchange="renderSales()" style="width:auto">
@@ -375,6 +376,7 @@
 
       <div class="tbl-wrap"><table>
         <thead><tr><th class="no-col">No.</th><th>날짜</th><th>공급업체</th><th>품목명</th><th>규격/사양</th><th style="text-align:right">수량</th><th style="text-align:right">단가</th><th>통화</th><th style="text-align:right">공급가액</th><th style="text-align:right">세액</th><th style="text-align:right">합계</th><th>인보이스번호</th><th>비고</th><th class="no-print">관리</th></tr></thead>
+
         <tbody id="purchase-tbody"><tr class="empty-row"><td colspan="14"><div class="loading"><div class="spinner"></div>불러오는 중...</div></td></tr></tbody>
       </table></div>
     </div>
@@ -461,28 +463,50 @@
 
     <!-- 거래처 -->
     <div class="panel" id="panel-customers">
-      <div class="card no-print">
-        <div class="card-title">🏢 거래처 등록
-          <button class="btn btn-ai btn-sm" onclick="openAiScan('customer')">🤖 AI 명함/서류 스캔 자동입력</button>
+      <div class="erp-container no-print">
+        <!-- 좌측 거래처 목록 사이드바 -->
+        <div class="erp-sidebar">
+          <div class="sidebar-search">
+            <input type="text" id="cust-list-search" placeholder="거래처 검색..." oninput="filterSidebar('cust')">
+          </div>
+          <div class="sidebar-list" id="cust-list-sidebar">
+            <!-- 거래처 목록이 여기에 렌더링됨 -->
+          </div>
         </div>
-        <div class="form-grid">
-          <div class="fg"><label>회사명 *</label><input id="c-name" placeholder="(주)○○무역"></div>
-          <div class="fg"><label>사업자번호</label><input id="c-bizno" placeholder="000-00-00000"></div>
-          <div class="fg"><label>국가</label><select id="c-country"><option>한국</option><option>일본</option><option>미국</option><option>중국</option><option>독일</option><option>대만</option><option>기타</option></select></div>
-          <div class="fg"><label>담당자</label><input id="c-contact" placeholder="홍길동"></div>
-          <div class="fg"><label>연락처</label><input id="c-tel" placeholder="010-0000-0000"></div>
-          <div class="fg"><label>이메일</label><input id="c-email" placeholder="contact@company.com"></div>
+
+        <!-- 우측 거래처 상세/등록 영역 -->
+        <div class="erp-main">
+          <div class="erp-header">
+            <div class="card-title">🏢 거래처 정보 등록/수정
+              <button class="btn btn-ai btn-sm" onclick="openAiScan('customer')" style="margin-left:auto">🤖 AI 스캔</button>
+            </div>
+            <div class="erp-form-grid">
+              <div class="fg"><label>회사명 *</label><input id="c-name" placeholder="(주)○○무역"></div>
+              <div class="fg"><label>사업자번호</label><input id="c-bizno" placeholder="000-00-00000"></div>
+              <div class="fg"><label>국가</label><select id="c-country"><option>한국</option><option>일본</option><option>미국</option><option>중국</option><option>독일</option><option>대만</option><option>기타</option></select></div>
+              <div class="fg"><label>담당자</label><input id="c-contact" placeholder="홍길동"></div>
+              <div class="fg"><label>연락처</label><input id="c-tel" placeholder="010-0000-0000"></div>
+              <div class="fg"><label>이메일</label><input id="c-email" placeholder="contact@company.com"></div>
+            </div>
+            <div class="fg" style="margin-top:10px"><label>주소</label><input id="c-addr" placeholder="주소"></div>
+            <div class="fg" style="margin-top:10px"><label>메모</label><input id="c-memo" placeholder="거래조건 등"></div>
+            <input type="hidden" id="c-id">
+          </div>
+          <div class="erp-footer">
+            <button class="btn" onclick="resetCustomerForm()">🔄 초기화</button>
+            <button class="btn btn-primary" id="btn-save-customer" onclick="saveCustomer()">💾 거래처 저장</button>
+            <button class="btn btn-danger" id="btn-del-customer" onclick="delCustFromForm()" style="display:none">🗑 삭제</button>
+          </div>
         </div>
-        <div class="fg" style="margin-bottom:8px"><label>주소</label><input id="c-addr" placeholder="주소"></div>
-        <div class="fg" style="margin-bottom:10px"><label>메모</label><input id="c-memo" placeholder="거래조건 등"></div>
-        <div class="btn-row"><button class="btn btn-primary" onclick="saveCustomer()">＋ 거래처 저장</button></div>
       </div>
-      <div class="sec">거래처 목록</div>
+
+      <div class="sec" style="margin-top:20px">전체 거래처 목록</div>
       <div class="tbl-wrap"><table>
         <thead><tr><th class="no-col">No.</th><th>회사명</th><th>국가</th><th>사업자번호</th><th>담당자</th><th>연락처</th><th>이메일</th><th>메모</th><th class="no-print">관리</th></tr></thead>
         <tbody id="customers-tbody"><tr class="empty-row"><td colspan="9"><div class="loading"><div class="spinner"></div>불러오는 중...</div></td></tr></tbody>
       </table></div>
     </div>
+
 
     <!-- 품목 -->
     <div class="panel" id="panel-products">

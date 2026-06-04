@@ -605,7 +605,10 @@ window.goto=function(id,btn){
     const bTbody = document.getElementById('buy-items-tbody');
     if(bTbody && bTbody.rows.length === 0) addErpRow('buy');
   }
-  if(id==='customers') renderCustomers();
+  if(id==='customers'){
+    renderCustomers();
+    renderSidebar('cust');
+  }
   if(id==='products') renderProducts();
   if(id==='stock') renderStock();
   if(id==='invoice') populateSelects();
@@ -785,13 +788,17 @@ function populateSelects(){
 
 // ── ERP 스타일 등록 로직 ──
 function renderSidebar(type) {
-  const listEl = document.getElementById(type + '-cust-list');
+  let listEl, qId;
+  if (type === 'sale') { listEl = document.getElementById('sale-cust-list'); qId = 'sale-cust-search'; }
+  else if (type === 'buy') { listEl = document.getElementById('buy-cust-list'); qId = 'buy-cust-search'; }
+  else if (type === 'cust') { listEl = document.getElementById('cust-list-sidebar'); qId = 'cust-list-search'; }
+
   if (!listEl) return;
-  const q = (document.getElementById(type + '-cust-search')?.value || '').toLowerCase();
-  const list = cache.customers.filter(c => c.name.toLowerCase().includes(q) || (c.bizno || '').includes(q));
-  
+  const q = (document.getElementById(qId)?.value || '').toLowerCase();
+  const list = cache.customers.filter(c => c.name.toLowerCase().includes(q) || (c.bizno || '').includes(q));   
+
   listEl.innerHTML = list.map(c => `
-    <div class="sidebar-item" onclick="selectSidebarItem('${type}', '${c.id}')" id="${type}-item-${c.id}">
+    <div class="sidebar-item" onclick="selectSidebarItem('${type}', '${c.id}')" id="${type}-item-${c.id}">     
       <div class="item-title">${c.name}</div>
       <div class="item-sub">${c.bizno || ''} ${c.contact ? '| ' + c.contact : ''}</div>
     </div>
@@ -803,21 +810,35 @@ window.filterSidebar = function(type) { renderSidebar(type); };
 window.selectSidebarItem = function(type, id) {
   const c = cache.customers.find(x => x.id === id);
   if (!c) return;
-  
-  document.querySelectorAll(`#${type}-cust-list .sidebar-item`).forEach(el => el.classList.remove('active'));
+
+  const listId = type === 'sale' ? 'sale-cust-list' : (type === 'buy' ? 'buy-cust-list' : 'cust-list-sidebar');
+  document.querySelectorAll(`#${listId} .sidebar-item`).forEach(el => el.classList.remove('active'));  
   const target = document.getElementById(`${type}-item-${id}`);
   if (target) target.classList.add('active');
-  
+
   if (type === 'sale') {
     document.getElementById('sale-customer-name').value = c.name;
     document.getElementById('sale-customer-id').value = c.id;
     document.getElementById('sale-bizno').value = c.bizno || '';
     document.getElementById('sale-ceo').value = c.contact || '';
-  } else {
+  } else if (type === 'buy') {
     document.getElementById('buy-vendor-name').value = c.name;
     document.getElementById('buy-vendor-id').value = c.id;
     document.getElementById('buy-bizno').value = c.bizno || '';
     document.getElementById('buy-ceo').value = c.contact || '';
+  } else if (type === 'cust') {
+    // 거래처 탭에서 선택 시 폼에 채우기
+    document.getElementById('c-id').value = c.id;
+    document.getElementById('c-name').value = c.name;
+    document.getElementById('c-bizno').value = c.bizno || '';
+    document.getElementById('c-country').value = c.country || '한국';
+    document.getElementById('c-contact').value = c.contact || '';
+    document.getElementById('c-tel').value = c.tel || '';
+    document.getElementById('c-email').value = c.email || '';
+    document.getElementById('c-addr').value = c.addr || '';
+    document.getElementById('c-memo').value = c.memo || '';
+    document.getElementById('btn-save-customer').textContent = '💾 정보 수정';
+    document.getElementById('btn-del-customer').style.display = 'inline-flex';
   }
 };
 
@@ -1417,12 +1438,52 @@ window.delPurch=async function(id){if(confirm('삭제하시겠습니까?'))await
 window.saveCustomer=async function(){
   const name=document.getElementById('c-name').value.trim();
   if(!name){alert('회사명을 입력하세요');return;}
-  await addToCol('customers',{name,bizno:document.getElementById('c-bizno').value,country:document.getElementById('c-country').value,contact:document.getElementById('c-contact').value,tel:document.getElementById('c-tel').value,email:document.getElementById('c-email').value,addr:document.getElementById('c-addr').value,memo:document.getElementById('c-memo').value});
-  ['c-name','c-bizno','c-contact','c-tel','c-email','c-addr','c-memo'].forEach(id=>document.getElementById(id).value='');
-  alert('✅ 거래처가 저장되었습니다!');
+  const id = document.getElementById('c-id').value;
+  const data = {
+    name,
+    bizno:document.getElementById('c-bizno').value,
+    country:document.getElementById('c-country').value,
+    contact:document.getElementById('c-contact').value,
+    tel:document.getElementById('c-tel').value,
+    email:document.getElementById('c-email').value,
+    addr:document.getElementById('c-addr').value,
+    memo:document.getElementById('c-memo').value
+  };
+
+  if (id) {
+    await updFromCol('customers', id, data);
+    alert('✅ 거래처 정보가 수정되었습니다!');
+  } else {
+    await addToCol('customers', data);
+    alert('✅ 새 거래처가 저장되었습니다!');
+  }
+  resetCustomerForm();
 };
+
+window.resetCustomerForm = function() {
+  ['c-name','c-bizno','c-contact','c-tel','c-email','c-addr','c-memo','c-id'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.value='';
+  });
+  document.getElementById('btn-save-customer').textContent = '💾 거래처 저장';
+  document.getElementById('btn-del-customer').style.display = 'none';
+  document.querySelectorAll('#cust-list-sidebar .sidebar-item').forEach(el => el.classList.remove('active'));
+};
+
+window.delCustFromForm = async function() {
+  const id = document.getElementById('c-id').value;
+  if (!id) return;
+  if (confirm('정말로 삭제하시겠습니까?')) {
+    await delFromCol('customers', id);
+    resetCustomerForm();
+  }
+};
+
 function renderCustomers(){
-  document.getElementById('customers-tbody').innerHTML=cache.customers.length
+  const tbody = document.getElementById('customers-tbody');
+  if(!tbody) return;
+  
+  tbody.innerHTML=cache.customers.length
     ?cache.customers.map((r,i)=>`<tr>
       <td class="no-col">${i+1}</td><td style="font-weight:600">${r.name}</td>
       <td>${r.country||''}</td><td style="color:var(--text2)">${r.bizno||''}</td>
@@ -1436,7 +1497,10 @@ function renderCustomers(){
     :'<tr class="empty-row"><td colspan="9">거래처를 추가해 주세요</td></tr>';
   // 모바일 카드
   renderMobileCards('customers',cache.customers,mCustomerCard);
+  // 사이드바 업데이트
+  renderSidebar('cust');
 }
+
 window.delCust=async function(id){if(confirm('삭제하시겠습니까?'))await delFromCol('customers',id);};
 
 // ── 품목 ──
