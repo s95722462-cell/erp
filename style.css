@@ -298,3 +298,113 @@ th:not(.no-col){text-transform:uppercase}
   .topbar-right { display: none !important; }
   .mobile-menu-btn { display: block !important; }
 }
+
+/* ── ERP 스타일 등록 레이아웃 ── */
+.erp-container {
+  display: flex;
+  gap: 14px;
+  height: calc(100vh - 120px);
+  min-height: 500px;
+  margin-bottom: 20px;
+}
+.erp-sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.sidebar-search {
+  padding: 12px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-list {
+  flex: 1;
+  overflow-y: auto;
+}
+.sidebar-item {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: all .15s;
+}
+.sidebar-item:hover { background: var(--surface2); }
+.sidebar-item.active { background: var(--green-bg); border-left: 4px solid var(--green); }
+.sidebar-item .item-title { font-weight: 700; font-size: 13px; margin-bottom: 2px; }
+.sidebar-item .item-sub { font-size: 11px; color: var(--text2); }
+
+.erp-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.erp-header {
+  padding: 16px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+}
+.erp-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+.erp-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+.erp-footer {
+  padding: 12px 16px;
+  background: var(--surface2);
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* ERP 전용 테이블 */
+.erp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.erp-table th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #e9e8e2;
+  border-bottom: 1px solid var(--border2);
+  padding: 8px 10px;
+  font-size: 11px;
+}
+.erp-table td {
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--border);
+}
+.erp-table input {
+  border: none;
+  background: transparent;
+  width: 100%;
+  padding: 4px 6px;
+  font-size: 13px;
+}
+.erp-table input:focus {
+  background: var(--surface);
+  outline: 1px solid var(--accent);
+}
+.erp-table .row-no { text-align: center; color: var(--text3); width: 36px; }
+
+@media(max-width: 1024px) {
+  .erp-container { flex-direction: column; height: auto; }
+  .erp-sidebar { width: 100%; height: 250px; }
+}

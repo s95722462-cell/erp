@@ -565,7 +565,13 @@ function startListeners(){
       },()=>setOffline());
     listeners.push(u);
   };
-  listen('customers','customers',()=>{renderCustomers();populateSelects();renderDash();});
+  listen('customers','customers',()=>{
+    renderCustomers();
+    populateSelects();
+    renderDash();
+    renderSidebar('sale');
+    renderSidebar('buy');
+  });
   listen('products','products',()=>{renderProducts();renderStock();renderDash();});
   listen('sales','sales',()=>{renderSales();renderStock();renderDash();});
   listen('purchases','purchases',()=>{renderPurchase();renderStock();renderDash();});
@@ -584,8 +590,21 @@ window.goto=function(id,btn){
   const fab=document.getElementById('fab-btn');
   if(fab) fab.classList[fabTabs.includes(id)?'add':'remove']('active-fab');
   if(id==='dash') renderDash();
-  if(id==='sales'){renderSales();populateSelects();}
-  if(id==='purchase') renderPurchase();
+  if(id==='sales'){
+    renderSales(); 
+    populateSelects(); 
+    renderSidebar('sale');
+    if(!document.getElementById('sale-date').value) document.getElementById('sale-date').value = today();
+    const sTbody = document.getElementById('sale-items-tbody');
+    if(sTbody && sTbody.rows.length === 0) addErpRow('sale');
+  }
+  if(id==='purchase'){
+    renderPurchase();
+    renderSidebar('buy');
+    if(!document.getElementById('buy-date').value) document.getElementById('buy-date').value = today();
+    const bTbody = document.getElementById('buy-items-tbody');
+    if(bTbody && bTbody.rows.length === 0) addErpRow('buy');
+  }
   if(id==='customers') renderCustomers();
   if(id==='products') renderProducts();
   if(id==='stock') renderStock();
@@ -749,7 +768,13 @@ function populateSelects(){
   const dc=document.getElementById('d-customer');
   if(dc){const v=dc.value;dc.innerHTML='<option value="">전체</option>'+cache.customers.map(c=>`<option value="${c.id}" data-name="${c.name}">${c.name}</option>`).join('');dc.value=v;}
 
-  // 품목 드롭다운
+  // 품목 데이터리스트 (ERP용)
+  const dl = document.getElementById('products-list');
+  if(dl) {
+    dl.innerHTML = cache.products.map(p => `<option value="${p.name}${p.spec ? ' (' + p.spec + ')' : ''}">`).join('');
+  }
+
+  // 품목 드롭다운 (기존용)
   const prodOpts='<option value="">-- 품목 선택 (또는 직접입력) --</option>'+
     cache.products.map(p=>`<option value="${p.id}" data-name="${p.name}" data-spec="${p.spec||''}" data-price="${p.price||0}" data-unit="${p.unit||'EA'}">${p.name}${p.spec?' ('+p.spec+')':''}</option>`).join('');
   ['sale-product-sel','buy-product-sel'].forEach(id=>{
@@ -757,6 +782,191 @@ function populateSelects(){
     if(el){const v=el.value;el.innerHTML=prodOpts;el.value=v;}
   });
 }
+
+// ── ERP 스타일 등록 로직 ──
+function renderSidebar(type) {
+  const listEl = document.getElementById(type + '-cust-list');
+  if (!listEl) return;
+  const q = (document.getElementById(type + '-cust-search')?.value || '').toLowerCase();
+  const list = cache.customers.filter(c => c.name.toLowerCase().includes(q) || (c.bizno || '').includes(q));
+  
+  listEl.innerHTML = list.map(c => `
+    <div class="sidebar-item" onclick="selectSidebarItem('${type}', '${c.id}')" id="${type}-item-${c.id}">
+      <div class="item-title">${c.name}</div>
+      <div class="item-sub">${c.bizno || ''} ${c.contact ? '| ' + c.contact : ''}</div>
+    </div>
+  `).join('');
+}
+
+window.filterSidebar = function(type) { renderSidebar(type); };
+
+window.selectSidebarItem = function(type, id) {
+  const c = cache.customers.find(x => x.id === id);
+  if (!c) return;
+  
+  document.querySelectorAll(`#${type}-cust-list .sidebar-item`).forEach(el => el.classList.remove('active'));
+  const target = document.getElementById(`${type}-item-${id}`);
+  if (target) target.classList.add('active');
+  
+  if (type === 'sale') {
+    document.getElementById('sale-customer-name').value = c.name;
+    document.getElementById('sale-customer-id').value = c.id;
+    document.getElementById('sale-bizno').value = c.bizno || '';
+    document.getElementById('sale-ceo').value = c.contact || '';
+  } else {
+    document.getElementById('buy-vendor-name').value = c.name;
+    document.getElementById('buy-vendor-id').value = c.id;
+    document.getElementById('buy-bizno').value = c.bizno || '';
+    document.getElementById('buy-ceo').value = c.contact || '';
+  }
+};
+
+window.addErpRow = function(type, data = {}) {
+  const tbody = document.getElementById(type + '-items-tbody');
+  if (!tbody) return;
+  const rowCount = tbody.rows.length;
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td class="row-no">${rowCount + 1}</td>
+    <td><input list="products-list" class="erp-item-name" placeholder="품목명/규격" onchange="fillErpProduct(this, '${type}')" value="${data.item || ''}"></td>
+    <td><input type="number" class="erp-qty" value="${data.qty || 1}" oninput="calcErpRow('${type}', this)"></td>
+    <td><input type="text" class="erp-price" placeholder="0" value="${(data.unitPrice || 0).toLocaleString()}" oninput="fmtInput(this);calcErpRow('${type}', this)"></td>
+    <td><input type="text" class="erp-subtotal" readonly value="${(data.subtotal || 0).toLocaleString()}"></td>
+    <td><input type="text" class="erp-total" readonly value="${(data.total || 0).toLocaleString()}"></td>
+    <td><input type="text" class="erp-memo" placeholder="비고" value="${data.memo || ''}"></td>
+    <td><button class="btn btn-sm btn-danger" onclick="removeErpRow('${type}', this)">✕</button></td>
+  `;
+  tbody.appendChild(tr);
+  calcErpTotal(type);
+};
+
+window.removeErpRow = function(type, btn) {
+  const tr = btn.closest('tr');
+  tr.remove();
+  const tbody = document.getElementById(type + '-items-tbody');
+  Array.from(tbody.rows).forEach((r, i) => {
+    const no = r.querySelector('.row-no');
+    if (no) no.textContent = i + 1;
+  });
+  calcErpTotal(type);
+};
+
+window.fillErpProduct = function(input, type) {
+  const name = input.value;
+  const p = cache.products.find(x => x.name === name || `${x.name} (${x.spec})` === name);
+  if (p) {
+    const tr = input.closest('tr');
+    tr.querySelector('.erp-item-name').value = p.name + (p.spec ? ` (${p.spec})` : '');
+    tr.querySelector('.erp-price').value = (p.price || 0).toLocaleString();
+    calcErpRow(type, tr.querySelector('.erp-price'));
+  }
+};
+
+window.calcErpRow = function(type, input) {
+  const tr = input.closest('tr');
+  const qtyInput = tr.querySelector('.erp-qty');
+  const priceInput = tr.querySelector('.erp-price');
+  if (!qtyInput || !priceInput) return;
+
+  const qty = rawNum(qtyInput.value);
+  const price = rawNum(priceInput.value);
+  const cur = document.getElementById(type + '-cur').value;
+  const sub = qty * price;
+  const vat = cur === 'KRW' ? Math.round(sub * 0.1) : 0;
+  
+  const subInput = tr.querySelector('.erp-subtotal');
+  const totalInput = tr.querySelector('.erp-total');
+  if (subInput) subInput.value = Math.round(sub).toLocaleString();
+  if (totalInput) totalInput.value = Math.round(sub + vat).toLocaleString();
+  calcErpTotal(type);
+};
+
+window.calcErpTotal = function(type) {
+  const tbody = document.getElementById(type + '-items-tbody');
+  if (!tbody) return;
+  let total = 0;
+  Array.from(tbody.rows).forEach(r => {
+    const tInput = r.querySelector('.erp-total');
+    if (tInput) total += rawNum(tInput.value);
+  });
+  const cur = document.getElementById(type + '-cur').value;
+  const totalEl = document.getElementById(type + '-final-total');
+  const curEl = document.getElementById(type + '-final-cur');
+  if (totalEl) totalEl.textContent = total.toLocaleString();
+  if (curEl) curEl.textContent = cur;
+};
+
+window.saveErpData = async function(type) {
+  const date = document.getElementById(type + '-date').value;
+  const idField = type === 'sale' ? 'sale-customer-id' : 'buy-vendor-id';
+  const nameField = type === 'sale' ? 'sale-customer-name' : 'buy-vendor-name';
+  const custId = document.getElementById(idField).value;
+  const custName = document.getElementById(nameField).value;
+  const invNo = document.getElementById(type + '-invno').value;
+  const cur = document.getElementById(type + '-cur').value;
+  const tbody = document.getElementById(type + '-items-tbody');
+  
+  if (!custId) { alert('거래처를 선택하세요'); return; }
+  if (!tbody || tbody.rows.length === 0) { alert('최소 하나 이상의 품목을 입력하세요'); return; }
+
+  const items = [];
+  for (let r of tbody.rows) {
+    const item = r.querySelector('.erp-item-name').value;
+    const qty = rawNum(r.querySelector('.erp-qty').value);
+    const price = rawNum(r.querySelector('.erp-price').value);
+    if (!item) continue;
+    
+    const sub = qty * price;
+    const vat = cur === 'KRW' ? Math.round(sub * 0.1) : 0;
+    
+    const data = {
+      date,
+      currency: cur,
+      qty,
+      unitPrice: price,
+      subtotal: sub,
+      vat,
+      total: sub + vat,
+      invNo,
+      memo: r.querySelector('.erp-memo').value,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    
+    if (type === 'sale') {
+      data.buyer = custName;
+      data.customer = custName;
+      data.customerId = custId;
+      data.item = item;
+    } else {
+      data.vendor = custName;
+      data.item = item;
+    }
+    items.push(data);
+  }
+  
+  if (items.length === 0) { alert('유효한 품목 정보가 없습니다'); return; }
+  
+  const loading = document.createElement('div');
+  loading.style = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700';
+  loading.textContent = '저장 중...';
+  document.body.appendChild(loading);
+
+  try {
+    const coll = type === 'sale' ? 'sales' : 'purchases';
+    for (let it of items) {
+      await addToCol(coll, it);
+    }
+    alert(`✅ 총 ${items.length}건이 저장되었습니다!`);
+    tbody.innerHTML = '';
+    addErpRow(type);
+    if (type === 'sale') renderSales(); else renderPurchase();
+  } catch (err) {
+    console.error(err);
+    alert('❌ 저장 중 오류가 발생했습니다.');
+  } finally {
+    document.body.removeChild(loading);
+  }
+};
 
 // ── 일별현황 ──
 function initDaily(){
