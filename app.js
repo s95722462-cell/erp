@@ -227,8 +227,6 @@ function renderDynamicTable(tableId, data, tbodyId, extraCellFn) {
       if (c.k === 'type') {
         const tagClass = r._t === '매출' ? 'tag-sale' : 'tag-buy';
         val = `<span class="tag ${tagClass}">${r._t}</span>`;
-      } else if (c.k === 'currency') {
-        val = `<span class="tag tag-${(val || 'krw').toLowerCase()}">${val}</span>`;
       } else if (['unitPrice', 'subtotal', 'vat', 'total'].includes(c.k)) {
         val = fmt(val, r.currency);
       } else if (c.k === 'qty') {
