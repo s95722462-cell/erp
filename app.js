@@ -245,7 +245,7 @@ function renderDynamicTable(tableId, data, tbodyId, extraCellFn) {
     if (extraCellFn) {
       const actW = colWidths[tableId + '-_action'];
       const actS = actW ? `width:${actW}px; min-width:${actW}px;` : '';
-      rowHtml += `<td class="no-print" style="${actS}">${extraCellFn(r)}</td>`;
+      rowHtml += `<td class="no-print" style="${actS} text-align:center;">${extraCellFn(r)}</td>`;
     }
     rowHtml += '</tr>';
     return rowHtml;

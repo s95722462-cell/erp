@@ -118,7 +118,19 @@ textarea{resize:vertical;min-height:60px}
 .btn-sm{padding:4px 9px;font-size:12px}
 .btn-danger{color:var(--red);border-color:#f5c0c0}.btn-danger:hover{background:var(--red-bg)}
 .btn-edit{color:var(--blue);border-color:#c0d4f5}.btn-edit:hover{background:var(--blue-bg)}
-.btn-inv{color:var(--purple);border-color:#d4c0f5}.btn-inv:hover{background:var(--purple-bg)}
+.btn-inv {
+  color: var(--purple);
+  border: none;
+  background: none;
+  padding: 0;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.btn-inv:hover {
+  text-decoration: none;
+  opacity: 0.7;
+}
 .btn-ai{color:var(--green);border-color:#a0d4b0;background:var(--green-bg)}.btn-ai:hover{opacity:.85}
 .btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
 .tbl-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow)}
