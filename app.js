@@ -952,10 +952,10 @@ window.addErpRow = function(type, data = {}) {
     <td class="row-no">${rowCount + 1}</td>
     <td><input list="products-list" class="erp-item-name" placeholder="품목명" onchange="fillErpProduct(this, '${type}')" value="${data.item || ''}"></td>
     <td><input class="erp-spec" placeholder="규격" value="${data.spec || ''}"></td>
-    <td><input type="number" class="erp-qty" value="${data.qty || 1}" oninput="calcErpRow('${type}', this)"></td>
-    <td><input type="text" class="erp-price" placeholder="0" value="${(data.unitPrice || 0).toLocaleString()}" oninput="fmtInput(this);calcErpRow('${type}', this)"></td>
-    <td><input type="text" class="erp-subtotal" readonly value="${(data.subtotal || 0).toLocaleString()}"></td>
-    <td><input type="text" class="erp-total" readonly value="${(data.total || 0).toLocaleString()}"></td>
+    <td><input type="number" class="erp-qty" value="${data.qty || ''}" oninput="calcErpRow('${type}', this)"></td>
+    <td><input type="text" class="erp-price" placeholder="0" value="${(data.unitPrice > 0 ? data.unitPrice.toLocaleString() : '')}" oninput="fmtInput(this);calcErpRow('${type}', this)"></td>
+    <td><input type="text" class="erp-subtotal" readonly value="${(data.subtotal > 0 ? data.subtotal.toLocaleString() : '')}"></td>
+    <td><input type="text" class="erp-total" readonly value="${(data.total > 0 ? data.total.toLocaleString() : '')}"></td>
     <td><input type="text" class="erp-memo" placeholder="비고" value="${data.memo || ''}"></td>
     <td><button class="btn btn-sm btn-danger" onclick="removeErpRow('${type}', this)">✕</button></td>
   `;
