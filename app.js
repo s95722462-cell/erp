@@ -776,10 +776,9 @@ function renderDash(){
       <td>${r.party||''}</td>
       <td style="font-weight:600">${r.desc||''}</td>
       <td style="color:var(--text2)">${r.spec||''}</td>
-      <td>${r.currency||''}</td>
       <td style="font-weight:700;text-align:right">${fmt(r._total,r.currency)}</td>
     </tr>`).join('')
-    :'<tr class="empty-row"><td colspan="8">거래 내역이 없습니다</td></tr>';
+    :'<tr class="empty-row"><td colspan="7">거래 내역이 없습니다</td></tr>';
 
   // 차트 렌더링
   renderCharts(s, p);
