@@ -352,7 +352,7 @@ function setOffline(){
 
 // ── 숫자 포맷 헬퍼 ──
 function rawNum(s){ return parseFloat(String(s).replace(/,/g,''))||0; }
-function fmt(n,cur){ return ({KRW:'₩',USD:'$',JPY:'¥',EUR:'€'}[cur||curCur]||'')+Math.round(n||0).toLocaleString(); }
+function fmt(n){ return '₩'+Math.round(n||0).toLocaleString(); }
 function today(){ return new Date().toISOString().slice(0,10); }
 function simpleHash(s){ let h=0; for(let c of s){h=(h<<5)-h+c.charCodeAt(0);h|=0;} return h.toString(36); }
 
@@ -730,10 +730,10 @@ function renderDash(){
   const tp=p.filter(r=>r.currency==='KRW').reduce((a,r)=>a+getTotal(r),0);
   const pr=ts-tp;
   const mo=new Date().toISOString().slice(0,7);
-  document.getElementById('kpi-sales').textContent=fmt(ts,'KRW');
-  document.getElementById('kpi-purch').textContent=fmt(tp,'KRW');
+  document.getElementById('kpi-sales').textContent=fmt(ts);
+  document.getElementById('kpi-purch').textContent=fmt(tp);
   const pe=document.getElementById('kpi-profit');
-  pe.textContent=fmt(pr,'KRW');
+  pe.textContent=fmt(pr);
   // pe.className 삭제하여 index.html에 설정된 기본값(n) 유지
   document.getElementById('kpi-cust').textContent=cache.customers.length;
   document.getElementById('kpi-prod').textContent=cache.products.length;
