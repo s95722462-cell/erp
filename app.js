@@ -1045,7 +1045,7 @@ window.renderDaily=function(){
     <div class="dc"><div class="dc-label">거래건수</div><div class="dc-val">${rows.length}건</div></div>`;
 
   renderDynamicTable('daily', rows, 'daily-tbody', (r) => {
-    return r._t === '매출' ? `<button class="btn btn-sm btn-inv" onclick="issueFromDailyRow('${r.id}')">📄 명세서</button>` : '—';
+    return r._t === '매출' ? `<button class="btn btn-sm btn-inv" onclick="issueFromDailyRow('${r.id}')">📄 거래명세서</button>` : '—';
   });
 };
 
