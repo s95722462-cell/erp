@@ -355,15 +355,15 @@
         </select>
       </div>
       <div class="tbl-wrap"><table>
-        <thead><tr><th class="no-col">No.</th><th>날짜</th><th>거래처</th><th>품목명</th><th>규격</th><th style="text-align:right">수량</th><th style="text-align:right">단가</th><th>통화</th><th style="text-align:right">공급가액</th><th style="text-align:right">세액</th><th style="text-align:right">합계</th><th>명세서No.</th><th>비고</th><th class="no-print">관리</th></tr></thead>
-        <tbody id="sales-tbody"><tr class="empty-row"><td colspan="14"><div class="loading"><div class="spinner"></div>불러오는 중...</div></td></tr></tbody>
-      </table></div>
-      <div id="sales-sum" style="text-align:right;margin-top:8px;font-size:13px;color:var(--text2)"></div>
-    </div>
+        <thead><tr><th class="no-col">No.</th><th>날짜</th><th>거래처</th><th>품목명</th><th>규격</th><th style="text-align:right">수량</th><th style="text-align:right">단가</th><th style="text-align:right">공급가액</th><th style="text-align:right">세액</th><th style="text-align:right">합계</th><th>명세서No.</th><th>비고</th><th class="no-print">관리</th></tr></thead>
+        <tbody id="sales-tbody"><tr class="empty-row"><td colspan="13"><div class="loading"><div class="spinner"></div>불러오는 중...</div></td></tr></tbody>
+        </table></div>
+        <div id="sales-sum" style="text-align:right;margin-top:8px;font-size:13px;color:var(--text2)"></div>
+        </div>
 
-    <!-- 매입장부 -->
-    <div class="panel" id="panel-purchase">
-      <div class="card no-print" id="card-buy-reg">
+        <!-- 매입장부 -->
+        <div class="panel" id="panel-purchase">
+        <div class="card no-print" id="card-buy-reg">
         <div class="card-title">📥 매입 등록
           <button class="toggle-btn" onclick="toggleCard('card-buy-reg')">접기/펴기</button>
         </div>
@@ -424,18 +424,17 @@
             </div>
           </div>
         </div>
-      </div>
+        </div>
 
-      <div class="sec" style="display:flex;align-items:center;margin-top:20px">매입 내역
+        <div class="sec" style="display:flex;align-items:center;margin-top:20px">매입 내역
         <button class="btn btn-sm" onclick="openColSettings('purchase')" style="margin-left:auto">⚙️ 항목 설정</button>
-      </div>
+        </div>
 
-      <div class="tbl-wrap"><table>
-        <thead><tr><th class="no-col">No.</th><th>날짜</th><th>공급업체</th><th>품목명</th><th>규격</th><th style="text-align:right">수량</th><th style="text-align:right">단가</th><th>통화</th><th style="text-align:right">공급가액</th><th style="text-align:right">세액</th><th style="text-align:right">합계</th><th>인보이스번호</th><th>비고</th><th class="no-print">관리</th></tr></thead>
-
-        <tbody id="purchase-tbody"><tr class="empty-row"><td colspan="14"><div class="loading"><div class="spinner"></div>불러오는 중...</div></td></tr></tbody>
-      </table></div>
-    </div>
+        <div class="tbl-wrap"><table>
+        <thead><tr><th class="no-col">No.</th><th>날짜</th><th>공급업체</th><th>품목명</th><th>규격</th><th style="text-align:right">수량</th><th style="text-align:right">단가</th><th style="text-align:right">공급가액</th><th style="text-align:right">세액</th><th style="text-align:right">합계</th><th>인보이스번호</th><th>비고</th><th class="no-print">관리</th></tr></thead>
+        <tbody id="purchase-tbody"><tr class="empty-row"><td colspan="13"><div class="loading"><div class="spinner"></div>불러오는 중...</div></td></tr></tbody>
+        </table></div>
+        </div>
 
     <!-- 재고현황 -->
     <div class="panel" id="panel-stock">
