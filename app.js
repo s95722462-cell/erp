@@ -196,7 +196,7 @@ function renderDynamicTable(tableId, data, tbodyId, extraCellFn) {
     const label = tableId === 'daily' ? '거래명세서' : '관리';
     const actWidth = colWidths[tableId + '-_action'];
     const actStyle = actWidth ? `width:${actWidth}px; min-width:${actWidth}px;` : '';
-    headHtml += `<th class="no-print" style="${actStyle}" data-key="_action">${label}<div class="resizer no-print"></div></th>`;
+    headHtml += `<th class="no-print" style="text-align:center; ${actStyle}" data-key="_action">${label}<div class="resizer no-print"></div></th>`;
   }
   theadRow.innerHTML = headHtml;
 
