@@ -587,14 +587,24 @@ window.goto=function(id,btn){
   if(btn) btn.classList.add('active');
   // 상단/하단 네비 동시 active
   document.querySelectorAll(`[onclick*="goto('${id}'"]`).forEach(b=>b.classList.add('active'));
+
+  // 모바일일 경우 등록 카드를 기본적으로 접음
+  if (isMobile()) {
+    const regCards = ['card-sale-reg', 'card-buy-reg', 'card-cust-reg', 'card-prod-reg'];
+    regCards.forEach(cardId => {
+      const card = document.getElementById(cardId);
+      if (card) card.classList.add('collapsed');
+    });
+  }
+
   // FAB 표시
   const fabTabs=['sales','purchase','customers','products'];
   const fab=document.getElementById('fab-btn');
   if(fab) fab.classList[fabTabs.includes(id)?'add':'remove']('active-fab');
   if(id==='dash') renderDash();
   if(id==='sales'){
-    renderSales(); 
-    populateSelects(); 
+    renderSales();
+    populateSelects();
     renderSidebar('sale');
     if(!document.getElementById('sale-date').value) document.getElementById('sale-date').value = today();
     const sTbody = document.getElementById('sale-items-tbody');
@@ -622,6 +632,11 @@ window.goto=function(id,btn){
   }
   if(id==='daily'){populateSelects();initDaily();}
   if(id==='settings'){loadSettingsToForm();renderCompanyCards();}
+};
+
+window.toggleCard = function(id) {
+  const card = document.getElementById(id);
+  if (card) card.classList.toggle('collapsed');
 };
 
 // ── 대시보드 ──
@@ -774,24 +789,19 @@ function renderCharts(sales, purchases) {
 }
 // ── 셀렉트 채우기 ──
 function populateSelects(){
-  const custOpts='<option value="">-- 거래처 선택 --</option>'+cache.customers.map(c=>`<option value="${c.id}" data-name="${c.name}" data-biz="${c.bizno||''}" data-addr="${c.addr||''}" data-ceo="${c.contact||''}" data-tel="${c.tel||''}">${c.name}</option>`).join('');
-  ['inv-buyer-sel','sale-customer'].forEach(id=>{const el=document.getElementById(id);if(el){const v=el.value;el.innerHTML=custOpts;el.value=v;}});
+  // 일별현황 거래처 필터
   const dc=document.getElementById('d-customer');
-  if(dc){const v=dc.value;dc.innerHTML='<option value="">전체</option>'+cache.customers.map(c=>`<option value="${c.id}" data-name="${c.name}">${c.name}</option>`).join('');dc.value=v;}
+  if(dc){
+    const v=dc.value;
+    dc.innerHTML='<option value="">전체</option>'+cache.customers.map(c=>`<option value="${c.id}" data-name="${c.name}">${c.name}</option>`).join('');
+    dc.value=v;
+  }
 
   // 품목 데이터리스트 (ERP용)
   const dl = document.getElementById('products-list');
   if(dl) {
     dl.innerHTML = cache.products.map(p => `<option value="${p.name}${p.spec ? ' (' + p.spec + ')' : ''}">`).join('');
   }
-
-  // 품목 드롭다운 (기존용)
-  const prodOpts='<option value="">-- 품목 선택 (또는 직접입력) --</option>'+
-    cache.products.map(p=>`<option value="${p.id}" data-name="${p.name}" data-spec="${p.spec||''}" data-price="${p.price||0}" data-unit="${p.unit||'EA'}">${p.name}${p.spec?' ('+p.spec+')':''}</option>`).join('');
-  ['sale-product-sel','buy-product-sel'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el){const v=el.value;el.innerHTML=prodOpts;el.value=v;}
-  });
 }
 
 // ── ERP 스타일 등록 로직 ──
@@ -1043,13 +1053,21 @@ window.issueFromDailyRow=function(saleId){
   const r=cache.sales.find(s=>s.id===saleId);
   if(!r){alert('데이터를 찾을 수 없습니다');return;}
 
-  populateSelects();
   if(r.date) document.getElementById('inv-date').value=r.date;
   if(r.invNo) document.getElementById('inv-no').value=r.invNo;
   if(r.memo) document.getElementById('inv-note').value=r.memo;
 
-  const sel=document.getElementById('inv-buyer-sel');
-  for(let opt of sel.options){if(opt.text===(r.buyer||r.customer)){sel.value=opt.value;break;}}
+  // 거래처 정보 채우기
+  const customer = cache.customers.find(c => c.id === r.customerId || c.name === (r.buyer || r.customer));
+  if (customer) {
+    document.getElementById('inv-customer-id').value = customer.id;
+    document.getElementById('inv-customer-name').value = customer.name;
+    document.getElementById('inv-bizno').value = customer.bizno || '';
+  } else {
+    document.getElementById('inv-customer-name').value = r.buyer || r.customer || '';
+    document.getElementById('inv-customer-id').value = '';
+    document.getElementById('inv-bizno').value = '';
+  }
 
   const cur=r.currency||'KRW'; curCur=cur;
 
@@ -1268,22 +1286,13 @@ function getBuyer(){
       id: document.getElementById('inv-customer-id').value,
       name: name,
       bizno: document.getElementById('inv-bizno').value,
-      addr: '', // 상세 정보가 필요하면 캐시에서 더 가져올 수 있음
+      addr: '', // 상세 정보 필요 시 캐시 활용 가능
       ceo: '',
       tel: ''
     };
   }
 
-  const sel=document.getElementById('inv-buyer-sel');
-  const opt=sel.options[sel.selectedIndex];
-  return{
-    id:sel.value,
-    name:opt?.text||'',
-    bizno:opt?.getAttribute('data-biz')||'',
-    addr:opt?.getAttribute('data-addr')||'',
-    ceo:opt?.getAttribute('data-ceo')||'',
-    tel:opt?.getAttribute('data-tel')||''
-  };
+  return { id: '', name: '', bizno: '', addr: '', ceo: '', tel: '' };
 }
 
 function makeOneCopy(items,label){
@@ -1814,6 +1823,76 @@ window.saveAccountSettings=async function(){
   await db.collection('users').doc(currentUser.safeId).update({pw:simpleHash(newpw)});
   document.getElementById('s-newpw').value='';
   alert('✅ 비밀번호가 변경되었습니다!');
+};
+
+window.changeLoginId = async function(btn) {
+  const newId = document.getElementById('s-uid').value.trim();
+  if (!newId) { alert('새 아이디를 입력하세요'); return; }
+  if (newId === currentUser.id) { alert('현재 아이디와 동일합니다'); return; }
+  
+  if (!confirm(`아이디를 "${newId}"(으)로 변경하시겠습니까?\n\n변경 후에는 새로운 아이디로 다시 로그인해야 하며,\n모든 데이터가 안전하게 이동됩니다.`)) return;
+  
+  const oldSafeId = currentUser.safeId;
+  const newSafeId = btoa(encodeURIComponent(newId)).replace(/[^a-zA-Z0-9]/g,'_');
+  
+  const oldText = btn ? btn.textContent : '변경';
+  
+  try {
+    // 1. 중복 확인
+    const checkSnap = await db.collection('users').doc(newSafeId).get();
+    if (checkSnap.exists) { alert('이미 사용 중인 아이디입니다'); return; }
+    
+    // 2. 마이그레이션 시작 (UI 알림)
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = '변경 중...';
+    }
+    
+    // 3. 사용자 문서 복사
+    const userDoc = await db.collection('users').doc(oldSafeId).get();
+    const userData = userDoc.data();
+    userData.displayId = newId;
+    await db.collection('users').doc(newSafeId).set(userData);
+    
+    // 4. 데이터 이동 (회사별)
+    const subCols = ['customers', 'products', 'sales', 'purchases'];
+    for (let i = 0; i < companies.length; i++) {
+      for (const colName of subCols) {
+        const subSnap = await db.collection(`users/${oldSafeId}/companies/${i}/${colName}`).get();
+        for (const doc of subSnap.docs) {
+          await db.collection(`users/${newSafeId}/companies/${i}/${colName}`).doc(doc.id).set(doc.data());
+          await doc.ref.delete(); // 데이터 이동이므로 기존 데이터 삭제
+        }
+      }
+      // 로컬스토리지 도장 이동
+      const oldSealKey = `ierp_seal_img_${oldSafeId}_${i}`;
+      const newSealKey = `ierp_seal_img_${newSafeId}_${i}`;
+      const sealData = localStorage.getItem(oldSealKey);
+      if (sealData) {
+        localStorage.setItem(newSealKey, sealData);
+        localStorage.removeItem(oldSealKey);
+      }
+    }
+    
+    // 5. 기존 사용자 문서 삭제
+    await db.collection('users').doc(oldSafeId).delete();
+    
+    // 6. 로컬스토리지 정보 업데이트
+    if (localStorage.getItem('ierp_saved_id')) localStorage.setItem('ierp_saved_id', newId);
+    if (localStorage.getItem('ierp_auto_login') === '1') {
+      localStorage.setItem('ierp_uid', newId);
+    }
+    
+    alert('✅ 아이디 변경이 완료되었습니다!\n새로운 아이디로 다시 로그인해 주세요.');
+    location.reload(); 
+    
+  } catch (e) {
+    alert('오류 발생: ' + e.message);
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = oldText;
+    }
+  }
 };
 window.exportData=function(){
   const a=document.createElement('a');
@@ -2372,9 +2451,21 @@ window.openFab=function(){
   const activePanel=document.querySelector('.panel.active');
   if(!activePanel) return;
   const id=activePanel.id.replace('panel-','');
+
+  // PC 환경에서 등록 카드가 접혀있다면 펼쳐줌
+  const regCardIds = {sales: 'card-sale-reg', purchase: 'card-buy-reg', customers: 'card-cust-reg', products: 'card-prod-reg'};
+  const targetCardId = regCardIds[id];
+  if (targetCardId) {
+    const card = document.getElementById(targetCardId);
+    if (card && card.classList.contains('collapsed')) {
+      card.classList.remove('collapsed');
+      if (!isMobile()) return; // PC라면 펼치기만 하고 종료 (모바일은 시트도 열어줌)
+    }
+  }
+
   const titles={sales:'매출 등록',purchase:'매입 등록',customers:'거래처 등록',products:'품목 등록'};
   if(!titles[id]) return;
-  
+
   // 모바일/PC 상관없이 시트 열기
   document.getElementById('sheet-title-text').textContent=titles[id];
   const body=document.getElementById('sheet-body');

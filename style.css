@@ -69,8 +69,14 @@ body{font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:var(
 .panel{display:none}.panel.active{display:block}
 
 /* ── 공통 ── */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;margin-bottom:14px;box-shadow:var(--shadow)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;margin-bottom:14px;box-shadow:var(--shadow);position:relative;transition:all 0.3s ease}
 .card-title{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.card.collapsed .card-body, .card.collapsed .form-grid, .card.collapsed .btn-row, .card.collapsed .erp-container {display:none!important}
+.card.collapsed {padding-bottom:10px;margin-bottom:10px}
+.card.collapsed .card-title {margin-bottom:0}
+.toggle-btn{margin-left:auto;cursor:pointer;padding:4px 8px;border-radius:4px;background:var(--surface2);font-size:10px;font-weight:600;color:var(--text2);border:1px solid var(--border);transition:all .15s}
+.toggle-btn:hover{background:var(--border);color:var(--text)}
+
 .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px}
 .kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow)}
 .kpi-label{font-size:10px;color:var(--text3);margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}

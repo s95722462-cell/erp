@@ -265,61 +265,65 @@
 
     <!-- 매출장부 -->
     <div class="panel" id="panel-sales">
-      <div class="erp-container no-print">
-        <!-- 좌측 거래처 선택 사이드바 -->
-        <div class="erp-sidebar">
-          <div class="sidebar-search">
-            <input type="text" id="sale-cust-search" placeholder="거래처 검색..." oninput="filterSidebar('sale')">
-          </div>
-          <div class="sidebar-list" id="sale-cust-list">
-            <!-- 거래처 목록이 여기에 렌더링됨 -->
-          </div>
+      <div class="card no-print" id="card-sale-reg">
+        <div class="card-title">📈 매출 등록
+          <button class="toggle-btn" onclick="toggleCard('card-sale-reg')">접기/펴기</button>
         </div>
+        <div class="erp-container no-print">
+          <!-- 좌측 거래처 선택 사이드바 -->
+          <div class="erp-sidebar">
+            <div class="sidebar-search">
+              <input type="text" id="sale-cust-search" placeholder="거래처 검색..." oninput="filterSidebar('sale')">
+            </div>
+            <div class="sidebar-list" id="sale-cust-list">
+              <!-- 거래처 목록이 여기에 렌더링됨 -->
+            </div>
+          </div>
 
-        <!-- 우측 등록 메인 영역 -->
-        <div class="erp-main">
-          <div class="erp-header">
-            <div class="card-title" style="margin-bottom:10px">📈 매출 등록</div>
-            <div class="erp-form-grid">
-              <div class="fg"><label>날짜</label><input type="date" id="sale-date"></div>
-              <div class="fg"><label>거래처</label><input id="sale-customer-name" readonly placeholder="좌측에서 선택하세요" style="background:var(--surface2)"></div>
-              <div class="fg"><label>사업자번호</label><input id="sale-bizno" readonly style="background:var(--surface2)"></div>
-              <div class="fg"><label>대표자명</label><input id="sale-ceo" readonly style="background:var(--surface2)"></div>
-              <input type="hidden" id="sale-customer-id">
-              <div class="fg"><label>명세서 No.</label><input id="sale-invno" placeholder="INV-2024-001"></div>
+          <!-- 우측 등록 메인 영역 -->
+          <div class="erp-main">
+            <div class="erp-header">
+              <div class="erp-form-grid">
+                <div class="fg"><label>날짜</label><input type="date" id="sale-date"></div>
+                <div class="fg"><label>거래처</label><input id="sale-customer-name" readonly placeholder="좌측에서 선택하세요" style="background:var(--surface2)"></div>
+                <div class="fg"><label>사업자번호</label><input id="sale-bizno" readonly style="background:var(--surface2)"></div>
+                <div class="fg"><label>대표자명</label><input id="sale-ceo" readonly style="background:var(--surface2)"></div>
+                <input type="hidden" id="sale-customer-id">
+                <div class="fg"><label>명세서 No.</label><input id="sale-invno" placeholder="INV-2024-001"></div>
 
-              <div class="fg"><label>통화</label>
-                <select id="sale-cur" onchange="calcErpTotal('sale')"><option>KRW</option><option>USD</option><option>JPY</option><option>EUR</option></select>
+                <div class="fg"><label>통화</label>
+                  <select id="sale-cur" onchange="calcErpTotal('sale')"><option>KRW</option><option>USD</option><option>JPY</option><option>EUR</option></select>
+                </div>
               </div>
             </div>
-          </div>
-          <div class="erp-body">
-            <table class="erp-table">
-              <thead>
-                <tr>
-                  <th style="width:40px">NO</th>
-                  <th>품목명/규격</th>
-                  <th style="width:80px">수량</th>
-                  <th style="width:120px">단가</th>
-                  <th style="width:120px">공급가액</th>
-                  <th style="width:120px">합계</th>
-                  <th>비고</th>
-                  <th style="width:40px"></th>
-                </tr>
-              </thead>
-              <tbody id="sale-items-tbody">
-                <!-- 품목 행이 여기에 추가됨 -->
-              </tbody>
-            </table>
-            <div style="padding:10px">
-              <button class="btn btn-sm" onclick="addErpRow('sale')">＋ 줄 추가</button>
+            <div class="erp-body">
+              <table class="erp-table">
+                <thead>
+                  <tr>
+                    <th style="width:40px">NO</th>
+                    <th>품목명/규격</th>
+                    <th style="width:80px">수량</th>
+                    <th style="width:120px">단가</th>
+                    <th style="width:120px">공급가액</th>
+                    <th style="width:120px">합계</th>
+                    <th>비고</th>
+                    <th style="width:40px"></th>
+                  </tr>
+                </thead>
+                <tbody id="sale-items-tbody">
+                  <!-- 품목 행이 여기에 추가됨 -->
+                </tbody>
+              </table>
+              <div style="padding:10px">
+                <button class="btn btn-sm" onclick="addErpRow('sale')">＋ 줄 추가</button>
+              </div>
             </div>
-          </div>
-          <div class="erp-footer">
-            <div style="margin-right:auto; font-weight:700; color:var(--text2)">
-              총 합계: <span id="sale-final-total">0</span> <span id="sale-final-cur">KRW</span>
+            <div class="erp-footer">
+              <div style="margin-right:auto; font-weight:700; color:var(--text2)">
+                총 합계: <span id="sale-final-total">0</span> <span id="sale-final-cur">KRW</span>
+              </div>
+              <button class="btn btn-primary" onclick="saveErpData('sale')">💾 매출 저장</button>
             </div>
-            <button class="btn btn-primary" onclick="saveErpData('sale')">💾 매출 저장</button>
           </div>
         </div>
       </div>
@@ -344,61 +348,65 @@
 
     <!-- 매입장부 -->
     <div class="panel" id="panel-purchase">
-      <div class="erp-container no-print">
-        <!-- 좌측 공급업체 선택 사이드바 -->
-        <div class="erp-sidebar">
-          <div class="sidebar-search">
-            <input type="text" id="buy-cust-search" placeholder="업체 검색..." oninput="filterSidebar('buy')">
-          </div>
-          <div class="sidebar-list" id="buy-cust-list">
-            <!-- 업체 목록이 여기에 렌더링됨 -->
-          </div>
+      <div class="card no-print" id="card-buy-reg">
+        <div class="card-title">📥 매입 등록
+          <button class="toggle-btn" onclick="toggleCard('card-buy-reg')">접기/펴기</button>
         </div>
+        <div class="erp-container no-print">
+          <!-- 좌측 공급업체 선택 사이드바 -->
+          <div class="erp-sidebar">
+            <div class="sidebar-search">
+              <input type="text" id="buy-cust-search" placeholder="업체 검색..." oninput="filterSidebar('buy')">
+            </div>
+            <div class="sidebar-list" id="buy-cust-list">
+              <!-- 업체 목록이 여기에 렌더링됨 -->
+            </div>
+          </div>
 
-        <!-- 우측 등록 메인 영역 -->
-        <div class="erp-main">
-          <div class="erp-header">
-            <div class="card-title" style="margin-bottom:10px">📥 매입 등록</div>
-            <div class="erp-form-grid">
-              <div class="fg"><label>날짜</label><input type="date" id="buy-date"></div>
-              <div class="fg"><label>공급업체</label><input id="buy-vendor-name" readonly placeholder="좌측에서 선택하세요" style="background:var(--surface2)"></div>
-              <div class="fg"><label>사업자번호</label><input id="buy-bizno" readonly style="background:var(--surface2)"></div>
-              <div class="fg"><label>대표자명</label><input id="buy-ceo" readonly style="background:var(--surface2)"></div>
-              <input type="hidden" id="buy-vendor-id">
-              <div class="fg"><label>인보이스 No.</label><input id="buy-invno" placeholder="PUR-00001"></div>
+          <!-- 우측 등록 메인 영역 -->
+          <div class="erp-main">
+            <div class="erp-header">
+              <div class="erp-form-grid">
+                <div class="fg"><label>날짜</label><input type="date" id="buy-date"></div>
+                <div class="fg"><label>공급업체</label><input id="buy-vendor-name" readonly placeholder="좌측에서 선택하세요" style="background:var(--surface2)"></div>
+                <div class="fg"><label>사업자번호</label><input id="buy-bizno" readonly style="background:var(--surface2)"></div>
+                <div class="fg"><label>대표자명</label><input id="buy-ceo" readonly style="background:var(--surface2)"></div>
+                <input type="hidden" id="buy-vendor-id">
+                <div class="fg"><label>인보이스 No.</label><input id="buy-invno" placeholder="PUR-00001"></div>
 
-              <div class="fg"><label>통화</label>
-                <select id="buy-cur" onchange="calcErpTotal('buy')"><option>KRW</option><option>USD</option><option>JPY</option><option>EUR</option></select>
+                <div class="fg"><label>통화</label>
+                  <select id="buy-cur" onchange="calcErpTotal('buy')"><option>KRW</option><option>USD</option><option>JPY</option><option>EUR</option></select>
+                </div>
               </div>
             </div>
-          </div>
-          <div class="erp-body">
-            <table class="erp-table">
-              <thead>
-                <tr>
-                  <th style="width:40px">NO</th>
-                  <th>품목명/규격</th>
-                  <th style="width:80px">수량</th>
-                  <th style="width:120px">단가</th>
-                  <th style="width:120px">공급가액</th>
-                  <th style="width:120px">합계</th>
-                  <th>비고</th>
-                  <th style="width:40px"></th>
-                </tr>
-              </thead>
-              <tbody id="buy-items-tbody">
-                <!-- 품목 행이 여기에 추가됨 -->
-              </tbody>
-            </table>
-            <div style="padding:10px">
-              <button class="btn btn-sm" onclick="addErpRow('buy')">＋ 줄 추가</button>
+            <div class="erp-body">
+              <table class="erp-table">
+                <thead>
+                  <tr>
+                    <th style="width:40px">NO</th>
+                    <th>품목명/규격</th>
+                    <th style="width:80px">수량</th>
+                    <th style="width:120px">단가</th>
+                    <th style="width:120px">공급가액</th>
+                    <th style="width:120px">합계</th>
+                    <th>비고</th>
+                    <th style="width:40px"></th>
+                  </tr>
+                </thead>
+                <tbody id="buy-items-tbody">
+                  <!-- 품목 행이 여기에 추가됨 -->
+                </tbody>
+              </table>
+              <div style="padding:10px">
+                <button class="btn btn-sm" onclick="addErpRow('buy')">＋ 줄 추가</button>
+              </div>
             </div>
-          </div>
-          <div class="erp-footer">
-            <div style="margin-right:auto; font-weight:700; color:var(--text2)">
-              총 합계: <span id="buy-final-total">0</span> <span id="buy-final-cur">KRW</span>
+            <div class="erp-footer">
+              <div style="margin-right:auto; font-weight:700; color:var(--text2)">
+                총 합계: <span id="buy-final-total">0</span> <span id="buy-final-cur">KRW</span>
+              </div>
+              <button class="btn btn-primary" onclick="saveErpData('buy')">💾 매입 저장</button>
             </div>
-            <button class="btn btn-primary" onclick="saveErpData('buy')">💾 매입 저장</button>
           </div>
         </div>
       </div>
@@ -496,39 +504,44 @@
 
     <!-- 거래처 -->
     <div class="panel" id="panel-customers">
-      <div class="erp-container no-print">
-        <!-- 좌측 거래처 목록 사이드바 -->
-        <div class="erp-sidebar">
-          <div class="sidebar-search">
-            <input type="text" id="cust-list-search" placeholder="거래처 검색..." oninput="filterSidebar('cust')">
-          </div>
-          <div class="sidebar-list" id="cust-list-sidebar">
-            <!-- 거래처 목록이 여기에 렌더링됨 -->
-          </div>
+      <div class="card no-print" id="card-cust-reg">
+        <div class="card-title">🏢 거래처 등록
+          <button class="toggle-btn" onclick="toggleCard('card-cust-reg')">접기/펴기</button>
         </div>
-
-        <!-- 우측 거래처 상세/등록 영역 -->
-        <div class="erp-main">
-          <div class="erp-header">
-            <div class="card-title">🏢 거래처 정보 등록/수정
-              <button class="btn btn-ai btn-sm" onclick="openAiScan('customer')" style="margin-left:auto">🤖 AI 스캔</button>
+        <div class="erp-container no-print">
+          <!-- 좌측 거래처 목록 사이드바 -->
+          <div class="erp-sidebar">
+            <div class="sidebar-search">
+              <input type="text" id="cust-list-search" placeholder="거래처 검색..." oninput="filterSidebar('cust')">
             </div>
-            <div class="erp-form-grid">
-              <div class="fg"><label>회사명 *</label><input id="c-name" placeholder="(주)○○무역"></div>
-              <div class="fg"><label>사업자번호</label><input id="c-bizno" placeholder="000-00-00000"></div>
-              <div class="fg"><label>국가</label><select id="c-country"><option>한국</option><option>일본</option><option>미국</option><option>중국</option><option>독일</option><option>대만</option><option>기타</option></select></div>
-              <div class="fg"><label>담당자</label><input id="c-contact" placeholder="홍길동"></div>
-              <div class="fg"><label>연락처</label><input id="c-tel" placeholder="010-0000-0000"></div>
-              <div class="fg"><label>이메일</label><input id="c-email" placeholder="contact@company.com"></div>
+            <div class="sidebar-list" id="cust-list-sidebar">
+              <!-- 거래처 목록이 여기에 렌더링됨 -->
             </div>
-            <div class="fg" style="margin-top:10px"><label>주소</label><input id="c-addr" placeholder="주소"></div>
-            <div class="fg" style="margin-top:10px"><label>메모</label><input id="c-memo" placeholder="거래조건 등"></div>
-            <input type="hidden" id="c-id">
           </div>
-          <div class="erp-footer">
-            <button class="btn" onclick="resetCustomerForm()">🔄 초기화</button>
-            <button class="btn btn-primary" id="btn-save-customer" onclick="saveCustomer()">💾 거래처 저장</button>
-            <button class="btn btn-danger" id="btn-del-customer" onclick="delCustFromForm()" style="display:none">🗑 삭제</button>
+
+          <!-- 우측 거래처 상세/등록 영역 -->
+          <div class="erp-main">
+            <div class="erp-header">
+              <div class="card-title">🏢 거래처 정보 등록/수정
+                <button class="btn btn-ai btn-sm" onclick="openAiScan('customer')" style="margin-left:auto">🤖 AI 스캔</button>
+              </div>
+              <div class="erp-form-grid">
+                <div class="fg"><label>회사명 *</label><input id="c-name" placeholder="(주)○○무역"></div>
+                <div class="fg"><label>사업자번호</label><input id="c-bizno" placeholder="000-00-00000"></div>
+                <div class="fg"><label>국가</label><select id="c-country"><option>한국</option><option>일본</option><option>미국</option><option>중국</option><option>독일</option><option>대만</option><option>기타</option></select></div>
+                <div class="fg"><label>담당자</label><input id="c-contact" placeholder="홍길동"></div>
+                <div class="fg"><label>연락처</label><input id="c-tel" placeholder="010-0000-0000"></div>
+                <div class="fg"><label>이메일</label><input id="c-email" placeholder="contact@company.com"></div>
+              </div>
+              <div class="fg" style="margin-top:10px"><label>주소</label><input id="c-addr" placeholder="주소"></div>
+              <div class="fg" style="margin-top:10px"><label>메모</label><input id="c-memo" placeholder="거래조건 등"></div>
+              <input type="hidden" id="c-id">
+            </div>
+            <div class="erp-footer">
+              <button class="btn" onclick="resetCustomerForm()">🔄 초기화</button>
+              <button class="btn btn-primary" id="btn-save-customer" onclick="saveCustomer()">💾 거래처 저장</button>
+              <button class="btn btn-danger" id="btn-del-customer" onclick="delCustFromForm()" style="display:none">🗑 삭제</button>
+            </div>
           </div>
         </div>
       </div>
@@ -543,8 +556,10 @@
 
     <!-- 품목 -->
     <div class="panel" id="panel-products">
-      <div class="card no-print">
-        <div class="card-title">📦 품목 등록</div>
+      <div class="card no-print" id="card-prod-reg">
+        <div class="card-title">📦 품목 등록
+          <button class="toggle-btn" onclick="toggleCard('card-prod-reg')">접기/펴기</button>
+        </div>
         <div class="form-grid">
           <div class="fg"><label>품목코드</label><input id="p-code" placeholder="PART-001"></div>
           <div class="fg"><label>품목명 *</label><input id="p-name" placeholder="부품명/모델명"></div>
@@ -601,7 +616,13 @@
           <div class="card">
             <div class="card-title">👤 내 계정</div>
             <div class="form-grid" style="grid-template-columns:1fr">
-              <div class="fg"><label>아이디</label><input id="s-uid" readonly style="background:var(--surface2);color:var(--text2)"></div>
+              <div class="fg">
+                <label>아이디</label>
+                <div style="display:flex;gap:8px">
+                  <input id="s-uid" style="flex:1">
+                  <button class="btn btn-sm" onclick="changeLoginId(this)">변경</button>
+                </div>
+              </div>
               <div class="fg"><label>새 비밀번호</label><input id="s-newpw" type="password" placeholder="변경시에만 입력"></div>
             </div>
             <div class="btn-row"><button class="btn btn-primary" onclick="saveAccountSettings()">💾 비밀번호 변경</button></div>
