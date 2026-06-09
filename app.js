@@ -1090,12 +1090,12 @@ function buildInvoiceHTML(items, cur, extraData){
   const buyer=getBuyer();
   const buyerName=buyer.name||(extraData?.buyer||extraData?.customer||'—');
   const co=getActiveCo();
-  const no=document.getElementById('inv-no').value;
-  const date=document.getElementById('inv-date').value;
-  const terms=document.getElementById('inv-terms').value||co.terms||'';
-  const note=document.getElementById('inv-note').value;
-  const manager=document.getElementById('inv-manager').value;
-  const receiver=document.getElementById('inv-receiver').value;
+  const no=document.getElementById('inv-no')?.value || '';
+  const date=document.getElementById('inv-date')?.value || '';
+  const terms=document.getElementById('inv-terms')?.value||co.terms||'';
+  const note=document.getElementById('inv-note')?.value || '';
+  const manager=document.getElementById('inv-manager')?.value || '';
+  const receiver=document.getElementById('inv-receiver')?.value || '';
   const footer=co.footer||'본 거래명세서는 발행일로부터 30일 이내 결제 바랍니다.';
   const empty=Math.max(0,7-items.length);
 
