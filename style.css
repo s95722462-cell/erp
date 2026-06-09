@@ -213,7 +213,7 @@ th:not(.no-col){text-transform:uppercase}
   position: relative;
   font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
   color: #000;
-  border: 1px solid #ccc;
+  /* border: 1px solid #ccc; */
   box-sizing: border-box;
 }
 .inv-trad-title {
@@ -280,8 +280,8 @@ th:not(.no-col){text-transform:uppercase}
 .inv-trad-total-box {
   border: 2px solid #d32f2f;
   display: flex;
-  margin-top: 15px;
-  margin-bottom: 10px;
+  margin-top: 30px;
+  margin-bottom: 20px;
   height: 40px;
   align-items: center;
 }
@@ -348,7 +348,7 @@ th:not(.no-col){text-transform:uppercase}
   right: 25px;
   width: 50px;
   height: 50px;
-  border: 2px solid rgba(211, 47, 47, 0.6);
+  /* border: 2px solid rgba(211, 47, 47, 0.6); */
   border-radius: 5px;
   display: flex;
   align-items: center;
