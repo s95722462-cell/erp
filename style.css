@@ -378,7 +378,7 @@ th:not(.no-col){text-transform:uppercase}
 }
 
 @media print {
-  .inv-trad { border: none; box-shadow: none; width: 100%; padding: 0; }
+  .inv-trad { background: #fff; width: 100%; max-width: 210mm; padding: 10mm; position: relative; font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; color: #000; box-sizing: border-box; }
 }
 
 
