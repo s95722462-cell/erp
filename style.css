@@ -280,6 +280,7 @@ th:not(.no-col){text-transform:uppercase}
 .inv-trad-total-box {
   border: 2px solid #d32f2f;
   display: flex;
+  margin-top: 15px;
   margin-bottom: 10px;
   height: 40px;
   align-items: center;
