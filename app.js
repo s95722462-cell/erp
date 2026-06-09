@@ -22,7 +22,6 @@ const tableCols = {
     { k: 'spec', l: '규격' },
     { k: 'qty', l: '수량', align: 'right' },
     { k: 'unitPrice', l: '단가', align: 'right' },
-    { k: 'currency', l: '통화' },
     { k: 'subtotal', l: '공급가액', align: 'right' },
     { k: 'vat', l: '세액', align: 'right' },
     { k: 'total', l: '합계', align: 'right' },
@@ -59,13 +58,13 @@ const tableCols = {
 };
 
 let activeCols = {
-  daily: ['date', 'type', 'party', 'item', 'spec', 'qty', 'unitPrice', 'currency', 'subtotal', 'vat', 'total', 'memo'],
+  daily: ['date', 'type', 'party', 'item', 'spec', 'qty', 'unitPrice', 'subtotal', 'vat', 'total', 'memo'],
   sales: ['date', 'buyer', 'item', 'spec', 'qty', 'unitPrice', 'currency', 'subtotal', 'vat', 'total', 'invNo', 'memo'],
   purchase: ['date', 'vendor', 'item', 'spec', 'qty', 'unitPrice', 'currency', 'subtotal', 'vat', 'total', 'invNo', 'memo']
 };
 
 let colOrder = {
-  daily: ['date', 'type', 'party', 'item', 'spec', 'qty', 'unitPrice', 'currency', 'subtotal', 'vat', 'total', 'memo'],
+  daily: ['date', 'type', 'party', 'item', 'spec', 'qty', 'unitPrice', 'subtotal', 'vat', 'total', 'memo'],
   sales: ['date', 'buyer', 'item', 'spec', 'qty', 'unitPrice', 'currency', 'subtotal', 'vat', 'total', 'invNo', 'memo'],
   purchase: ['date', 'vendor', 'item', 'spec', 'qty', 'unitPrice', 'currency', 'subtotal', 'vat', 'total', 'invNo', 'memo']
 };
