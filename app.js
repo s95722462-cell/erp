@@ -182,16 +182,22 @@ function renderDynamicTable(tableId, data, tbodyId, extraCellFn) {
     .filter(Boolean);
 
   // 1. 헤더 생성
-  let headHtml = '<th class="no-col">No.</th>';
+  const noWidth = colWidths[tableId + '-_no'];
+  const noStyle = noWidth ? `width:${noWidth}px; min-width:${noWidth}px;` : '';
+  let headHtml = `<th class="no-col" style="${noStyle}" data-key="_no">No.<div class="resizer no-print"></div></th>`;
+  
   activeConfigs.forEach(c => {
     const align = c.align === 'right' ? 'text-align:right' : (c.align === 'center' ? 'text-align:center' : '');
     const savedWidth = colWidths[tableId + '-' + c.k];
     const widthStyle = savedWidth ? `width:${savedWidth}px; min-width:${savedWidth}px;` : '';
     headHtml += `<th style="${align}; ${widthStyle}" data-key="${c.k}">${c.l}<div class="resizer no-print"></div></th>`;
   });
+  
   if (extraCellFn) {
     const label = tableId === 'daily' ? '거래명세서' : '관리';
-    headHtml += `<th class="no-print">${label}</th>`;
+    const actWidth = colWidths[tableId + '-_action'];
+    const actStyle = actWidth ? `width:${actWidth}px; min-width:${actWidth}px;` : '';
+    headHtml += `<th class="no-print" style="${actStyle}" data-key="_action">${label}<div class="resizer no-print"></div></th>`;
   }
   theadRow.innerHTML = headHtml;
 
@@ -202,7 +208,10 @@ function renderDynamicTable(tableId, data, tbodyId, extraCellFn) {
   }
 
   tbody.innerHTML = data.map((r, i) => {
-    let rowHtml = `<tr><td class="no-col">${i + 1}</td>`;
+    const noW = colWidths[tableId + '-_no'];
+    const noS = noW ? `width:${noW}px; min-width:${noW}px;` : '';
+    let rowHtml = `<tr><td class="no-col" style="${noS}">${i + 1}</td>`;
+    
     activeConfigs.forEach(c => {
       const align = c.align === 'right' ? 'text-align:right' : (c.align === 'center' ? 'text-align:center' : '');
       const savedWidth = colWidths[tableId + '-' + c.k];
@@ -233,7 +242,12 @@ function renderDynamicTable(tableId, data, tbodyId, extraCellFn) {
       
       rowHtml += `<td style="${align}; ${widthStyle}">${val}</td>`;
     });
-    if (extraCellFn) rowHtml += `<td class="no-print">${extraCellFn(r)}</td>`;
+    
+    if (extraCellFn) {
+      const actW = colWidths[tableId + '-_action'];
+      const actS = actW ? `width:${actW}px; min-width:${actW}px;` : '';
+      rowHtml += `<td class="no-print" style="${actS}">${extraCellFn(r)}</td>`;
+    }
     rowHtml += '</tr>';
     return rowHtml;
   }).join('');
