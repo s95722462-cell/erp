@@ -81,16 +81,22 @@ body{font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:var(
 th { position: relative; }
 .resizer {
   position: absolute;
-  top: 0;
+  top: 4px;
   right: 0;
-  width: 5px;
+  width: 4px;
   cursor: col-resize;
   user-select: none;
-  height: 100%;
+  height: calc(100% - 8px);
   z-index: 1;
+  border-right: 2px solid var(--border2);
+  transition: all .15s;
+  opacity: 0.5;
 }
-.resizer:hover { background: var(--accent); opacity: 0.5; }
-.resizing { border-right: 2px solid var(--accent); }
+.resizer:hover { 
+  border-right: 2px solid var(--accent);
+  opacity: 1;
+}
+.resizing { border-right: 2px solid var(--accent); opacity: 1; }
 
 .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px}
 .kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow)}
