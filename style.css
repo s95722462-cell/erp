@@ -78,25 +78,25 @@ body{font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:var(
 .toggle-btn:hover{background:var(--border);color:var(--text)}
 
 /* 테이블 리사이저 */
-th { position: relative; }
+th { position: relative; border-right: 1px solid var(--border); }
+th:last-child { border-right: none; }
 .resizer {
   position: absolute;
-  top: 4px;
-  right: 0;
-  width: 4px;
+  top: 0;
+  right: -2px;
+  width: 5px;
   cursor: col-resize;
   user-select: none;
-  height: calc(100% - 8px);
-  z-index: 1;
-  border-right: 2px solid var(--border2);
+  height: 100%;
+  z-index: 10;
   transition: all .15s;
-  opacity: 0.5;
+  opacity: 0;
 }
 .resizer:hover { 
-  border-right: 2px solid var(--accent);
   opacity: 1;
+  background: var(--accent);
 }
-.resizing { border-right: 2px solid var(--accent); opacity: 1; }
+.resizing { opacity: 1; background: var(--accent); }
 
 .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px}
 .kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow)}
