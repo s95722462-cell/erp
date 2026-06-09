@@ -950,7 +950,8 @@ window.addErpRow = function(type, data = {}) {
   const tr = document.createElement('tr');
   tr.innerHTML = `
     <td class="row-no">${rowCount + 1}</td>
-    <td><input list="products-list" class="erp-item-name" placeholder="품목명/규격" onchange="fillErpProduct(this, '${type}')" value="${data.item || ''}"></td>
+    <td><input list="products-list" class="erp-item-name" placeholder="품목명" onchange="fillErpProduct(this, '${type}')" value="${data.item || ''}"></td>
+    <td><input class="erp-spec" placeholder="규격" value="${data.spec || ''}"></td>
     <td><input type="number" class="erp-qty" value="${data.qty || 1}" oninput="calcErpRow('${type}', this)"></td>
     <td><input type="text" class="erp-price" placeholder="0" value="${(data.unitPrice || 0).toLocaleString()}" oninput="fmtInput(this);calcErpRow('${type}', this)"></td>
     <td><input type="text" class="erp-subtotal" readonly value="${(data.subtotal || 0).toLocaleString()}"></td>
@@ -975,10 +976,11 @@ window.removeErpRow = function(type, btn) {
 
 window.fillErpProduct = function(input, type) {
   const name = input.value;
-  const p = cache.products.find(x => x.name === name || `${x.name} (${x.spec})` === name);
+  const p = cache.products.find(x => x.name === name);
   if (p) {
     const tr = input.closest('tr');
-    tr.querySelector('.erp-item-name').value = p.name + (p.spec ? ` (${p.spec})` : '');
+    tr.querySelector('.erp-item-name').value = p.name;
+    tr.querySelector('.erp-spec').value = p.spec || '';
     tr.querySelector('.erp-price').value = (p.price || 0).toLocaleString();
     calcErpRow(type, tr.querySelector('.erp-price'));
   }
