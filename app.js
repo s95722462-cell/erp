@@ -70,6 +70,8 @@ let colOrder = {
   purchase: ['date', 'vendor', 'item', 'spec', 'qty', 'unitPrice', 'currency', 'subtotal', 'vat', 'total', 'invNo', 'memo']
 };
 
+let colWidths = {};
+
 let currentSettingTable = '';
 
 function loadActiveCols() {
@@ -89,6 +91,9 @@ function loadActiveCols() {
       }
     }
   }
+
+  const savedWidths = localStorage.getItem('ierp_col_widths');
+  if (savedWidths) colWidths = JSON.parse(savedWidths);
 }
 
 window.openColSettings = function(tableId) {
@@ -180,7 +185,9 @@ function renderDynamicTable(tableId, data, tbodyId, extraCellFn) {
   let headHtml = '<th class="no-col">No.</th>';
   activeConfigs.forEach(c => {
     const align = c.align === 'right' ? 'text-align:right' : (c.align === 'center' ? 'text-align:center' : '');
-    headHtml += `<th style="${align}">${c.l}</th>`;
+    const savedWidth = colWidths[tableId + '-' + c.k];
+    const widthStyle = savedWidth ? `width:${savedWidth}px; min-width:${savedWidth}px;` : '';
+    headHtml += `<th style="${align}; ${widthStyle}" data-key="${c.k}">${c.l}<div class="resizer no-print"></div></th>`;
   });
   if (extraCellFn) {
     const label = tableId === 'daily' ? '거래명세서' : '관리';
@@ -198,6 +205,8 @@ function renderDynamicTable(tableId, data, tbodyId, extraCellFn) {
     let rowHtml = `<tr><td class="no-col">${i + 1}</td>`;
     activeConfigs.forEach(c => {
       const align = c.align === 'right' ? 'text-align:right' : (c.align === 'center' ? 'text-align:center' : '');
+      const savedWidth = colWidths[tableId + '-' + c.k];
+      const widthStyle = savedWidth ? `width:${savedWidth}px; min-width:${savedWidth}px;` : '';
       let val = r[c.k] || '';
       
       // 데이터 필드 매핑 보정 (일별현황 등에서 사용)
@@ -222,12 +231,71 @@ function renderDynamicTable(tableId, data, tbodyId, extraCellFn) {
         val = `<span style="color:var(--text2)">${val}</span>`;
       }
       
-      rowHtml += `<td style="${align}">${val}</td>`;
+      rowHtml += `<td style="${align}; ${widthStyle}">${val}</td>`;
     });
     if (extraCellFn) rowHtml += `<td class="no-print">${extraCellFn(r)}</td>`;
     rowHtml += '</tr>';
     return rowHtml;
   }).join('');
+
+  // 드래그 리사이즈 이벤트 바인딩
+  initResizableTable(table, tableId);
+}
+
+function initResizableTable(table, tableId) {
+  const cols = table.querySelectorAll('th');
+  [].forEach.call(cols, (col) => {
+    const resizer = col.querySelector('.resizer');
+    if (!resizer) return;
+
+    let x = 0;
+    let w = 0;
+
+    const mouseDownHandler = (e) => {
+      x = e.clientX;
+      const styles = window.getComputedStyle(col);
+      w = parseInt(styles.width, 10);
+
+      document.addEventListener('mousemove', mouseMoveHandler);
+      document.addEventListener('mouseup', mouseUpHandler);
+      resizer.classList.add('resizing');
+    };
+
+    const mouseMoveHandler = (e) => {
+      const dx = e.clientX - x;
+      const newWidth = w + dx;
+      if (newWidth > 30) {
+        col.style.width = `${newWidth}px`;
+        col.style.minWidth = `${newWidth}px`;
+        
+        // 해당 열의 모든 td도 너비 맞춤
+        const colIndex = Array.from(col.parentNode.children).indexOf(col);
+        const rows = table.querySelectorAll('tr');
+        rows.forEach(row => {
+          const cell = row.children[colIndex];
+          if (cell) {
+            cell.style.width = `${newWidth}px`;
+            cell.style.minWidth = `${newWidth}px`;
+          }
+        });
+      }
+    };
+
+    const mouseUpHandler = () => {
+      document.removeEventListener('mousemove', mouseMoveHandler);
+      document.removeEventListener('mouseup', mouseUpHandler);
+      resizer.classList.remove('resizing');
+      
+      // 너비 저장
+      const key = col.getAttribute('data-key');
+      if (key) {
+        colWidths[tableId + '-' + key] = parseInt(col.style.width, 10);
+        localStorage.setItem('ierp_col_widths', JSON.stringify(colWidths));
+      }
+    };
+
+    resizer.addEventListener('mousedown', mouseDownHandler);
+  });
 }
 
 function initApp(){
@@ -2539,10 +2607,12 @@ window.openFab=function(){
 window.openSheet=function(){
   document.getElementById('mobile-sheet').classList.add('open');
   document.getElementById('sheet-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden'; // 시트 열릴 때 배경 스크롤 방지
 };
 window.closeSheet=function(){
   document.getElementById('mobile-sheet').classList.remove('open');
   document.getElementById('sheet-overlay').classList.remove('open');
+  document.body.style.overflow = ''; // 시트 닫힐 때 복구
 };
 
 // 모바일 자동계산
