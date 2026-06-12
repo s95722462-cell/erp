@@ -1022,14 +1022,16 @@ window.calcErpTotal = function(type) {
 
 window.saveErpData = async function(type) {
   const date = document.getElementById(type + '-date').value;
-  const idField = type === 'sale' ? 'sale-customer-id' : 'buy-vendor-id';
-  const nameField = type === 'sale' ? 'sale-customer-name' : 'buy-vendor-name';
+  const idField = type === 'sale' ? 'sale-customer-id' : (type === 'buy' ? 'buy-vendor-id' : 'inv-customer-id');
+  const nameField = type === 'sale' ? 'sale-customer-name' : (type === 'buy' ? 'buy-vendor-name' : 'inv-customer-name');
+  const invNoField = type === 'inv' ? 'inv-no' : type + '-invno';
+
   const custId = document.getElementById(idField).value;
   const custName = document.getElementById(nameField).value;
-  const invNo = document.getElementById(type + '-invno').value;
+  const invNo = document.getElementById(invNoField).value;
   const cur = document.getElementById(type + '-cur').value;
   const tbody = document.getElementById(type + '-items-tbody');
-  
+
   if (!custId) { alert('거래처를 선택하세요'); return; }
   if (!tbody || tbody.rows.length === 0) { alert('최소 하나 이상의 품목을 입력하세요'); return; }
 
@@ -1039,10 +1041,10 @@ window.saveErpData = async function(type) {
     const qty = rawNum(r.querySelector('.erp-qty').value);
     const price = rawNum(r.querySelector('.erp-price').value);
     if (!item) continue;
-    
+
     const sub = qty * price;
     const vat = cur === 'KRW' ? Math.round(sub * 0.1) : 0;
-    
+
     const data = {
       date,
       currency: cur,
@@ -1055,8 +1057,8 @@ window.saveErpData = async function(type) {
       memo: r.querySelector('.erp-memo').value,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     };
-    
-    if (type === 'sale') {
+
+    if (type === 'sale' || type === 'inv') {
       data.buyer = custName;
       data.customer = custName;
       data.customerId = custId;
@@ -1067,23 +1069,23 @@ window.saveErpData = async function(type) {
     }
     items.push(data);
   }
-  
+
   if (items.length === 0) { alert('유효한 품목 정보가 없습니다'); return; }
-  
+
   const loading = document.createElement('div');
   loading.style = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700';
   loading.textContent = '저장 중...';
   document.body.appendChild(loading);
 
   try {
-    const coll = type === 'sale' ? 'sales' : 'purchases';
+    const coll = (type === 'sale' || type === 'inv') ? 'sales' : 'purchases';
     for (let it of items) {
       await addToCol(coll, it);
     }
     alert(`✅ 총 ${items.length}건이 저장되었습니다!`);
     tbody.innerHTML = '';
     addErpRow(type);
-    if (type === 'sale') renderSales(); else renderPurchase();
+    if (type === 'sale' || type === 'inv') renderSales(); else renderPurchase();
   } catch (err) {
     console.error(err);
     alert('❌ 저장 중 오류가 발생했습니다.');
