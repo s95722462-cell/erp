@@ -356,6 +356,20 @@ function fmt(n){ return '₩'+Math.round(n||0).toLocaleString(); }
 function today(){ return new Date().toISOString().slice(0,10); }
 function simpleHash(s){ let h=0; for(let c of s){h=(h<<5)-h+c.charCodeAt(0);h|=0;} return h.toString(36); }
 
+function getNextProductCode() {
+  if (!cache.products || cache.products.length === 0) return 'P0001';
+  let maxNum = 0;
+  cache.products.forEach(p => {
+    const code = p.code || '';
+    const match = code.match(/^P(\d+)$/i);
+    if (match) {
+      const num = parseInt(match[1]);
+      if (num > maxNum) maxNum = num;
+    }
+  });
+  return 'P' + String(maxNum + 1).padStart(4, '0');
+}
+
 // 1,000단위 포맷 입력
 window.fmtInput=function(el){
   const raw=String(el.value).replace(/,/g,'');
@@ -700,7 +714,11 @@ window.goto=function(id,btn){
     renderCustomers();
     renderSidebar('cust');
   }
-  if(id==='products') renderProducts();
+  if(id==='products') {
+    renderProducts();
+    const pCodeEl = document.getElementById('p-code');
+    if(pCodeEl && !pCodeEl.value) pCodeEl.value = getNextProductCode();
+  }
   if(id==='stock') renderStock();
   if(id==='invoice') {
     populateSelects();
@@ -1683,6 +1701,7 @@ window.saveProduct=async function(){
     memo:document.getElementById('p-memo').value
   });
   ['p-code','p-name','p-spec','p-maker','p-price','p-unit','p-memo'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('p-code').value = getNextProductCode();
   document.getElementById('p-stock').value='0';
   document.getElementById('p-safestock').value='0';
   alert('✅ 품목이 저장되었습니다!');
@@ -2624,9 +2643,10 @@ window.openFab=function(){
       </div>
       <button class="btn btn-primary" style="width:100%;margin-top:8px;padding:14px;font-size:15px" onclick="mSaveCustomer()">💾 거래처 저장</button>`;
   } else if(id==='products'){
+    const nextCode = getNextProductCode();
     body.innerHTML=`
       <div class="form-grid" style="grid-template-columns:1fr">
-        <div class="fg"><label>품목코드</label><input id="ms-p-code" placeholder="PART-001"></div>
+        <div class="fg"><label>품목코드</label><input id="ms-p-code" value="${nextCode}"></div>
         <div class="fg"><label>품목명 *</label><input id="ms-p-name" placeholder="품목명"></div>
         <div class="fg"><label>규격</label><input id="ms-p-spec" placeholder="규격"></div>
         <div class="fg"><label>제조사</label><input id="ms-p-maker" placeholder="제조사"></div>
