@@ -186,7 +186,7 @@ th:not(.no-col){text-transform:uppercase}
   .no-print,.no-print-btn,.bottom-nav,.app,.topbar,.nav{display:none!important}
   body{background:#fff;margin:0;padding:0}
   .content{display:none!important}
-  #print-area{display:block!important;position:static!important;padding:6mm!important;overflow:visible!important}
+  #print-area{display:block!important;position:absolute!important;left:0;top:0;width:100%!important;padding:0!important;overflow:visible!important}
   @page{size:A4 portrait;margin:6mm}
 }
 #print-area{display:none;position:fixed;inset:0;background:#fff;z-index:9999;padding:12px 16px;overflow:auto;box-sizing:border-box}
