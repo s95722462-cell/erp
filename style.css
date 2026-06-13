@@ -189,7 +189,16 @@ th:not(.no-col){text-transform:uppercase}
   #print-area{display:block!important;position:static!important;padding:6mm!important;overflow:visible!important}
   @page{size:A4 portrait;margin:6mm}
 }
-#print-area{display:none;position:fixed;inset:0;background:#fff;z-index:9999;padding:12px 16px;overflow-y:auto;box-sizing:border-box}
+#print-area{display:none;position:fixed;inset:0;background:#fff;z-index:9999;padding:12px 16px;overflow:auto;box-sizing:border-box}
+
+@media (max-width: 768px) {
+  #print-area { padding: 8px !important; }
+  #print-area > div:last-child {
+    zoom: 0.5;
+    margin: 0 auto;
+    width: 210mm !important;
+  }
+}
 .inv-copy-wrap{display:flex;flex-direction:column;gap:12px}
 .inv-a4{background:#fff;width:210mm;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:12mm 10mm;position:relative;font-size:11px;line-height:1.5;font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif}
 .inv-title{text-align:center;font-size:19px;font-weight:700;letter-spacing:3px;margin-bottom:3px}

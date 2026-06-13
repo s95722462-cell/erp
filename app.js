@@ -2529,6 +2529,29 @@ window.resetCurrentCompanyData = async function() {
 };
 function isMobile(){ return window.innerWidth<=768; }
 
+window.openMobileMenu = function() {
+  const body = document.getElementById('sheet-body');
+  document.getElementById('sheet-title-text').textContent = '메뉴';
+  body.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;margin-bottom:20px">
+      <button class="btn" onclick="closeSheet();goto('dash')" style="flex-direction:column;padding:12px 5px;height:auto;font-size:11px">📊<br>대시보드</button>
+      <button class="btn" onclick="closeSheet();goto('daily')" style="flex-direction:column;padding:12px 5px;height:auto;font-size:11px">📅<br>일별현황</button>
+      <button class="btn" onclick="closeSheet();goto('sales')" style="flex-direction:column;padding:12px 5px;height:auto;font-size:11px">📈<br>매출장부</button>
+      <button class="btn" onclick="closeSheet();goto('purchase')" style="flex-direction:column;padding:12px 5px;height:auto;font-size:11px">📥<br>매입장부</button>
+      <button class="btn" onclick="closeSheet();goto('stock')" style="flex-direction:column;padding:12px 5px;height:auto;font-size:11px">📦<br>재고현황</button>
+      <button class="btn" onclick="closeSheet();goto('customers')" style="flex-direction:column;padding:12px 5px;height:auto;font-size:11px">🏢<br>거래처</button>
+      <button class="btn" onclick="closeSheet();goto('products')" style="flex-direction:column;padding:12px 5px;height:auto;font-size:11px">🔧<br>품목</button>
+      <button class="btn" onclick="closeSheet();goto('settings')" style="flex-direction:column;padding:12px 5px;height:auto;font-size:11px">⚙️<br>설정</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="btn" onclick="closeSheet();openGlobalSearch()" style="justify-content:flex-start;padding:12px">🔍 통합 검색 (Ctrl+K)</button>
+      <button class="btn" onclick="closeSheet();toggleDarkMode()" style="justify-content:flex-start;padding:12px">🌓 테마 전환</button>
+      <button class="btn btn-danger" onclick="closeSheet();doLogout()" style="justify-content:flex-start;padding:12px">🚪 로그아웃</button>
+    </div>
+  `;
+  openSheet();
+};
+
 window.openFab=function(){
   const activePanel=document.querySelector('.panel.active');
   if(!activePanel) return;
