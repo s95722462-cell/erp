@@ -2233,6 +2233,7 @@ window.addEventListener('keydown', e => {
 // ── PDF 다운로드 (PDF Export) ──
 
 window.downloadPdf = async function() {
+  console.log('downloadPdf called');
   const preview = document.getElementById('inv-preview-area');
   if (!preview || !preview.innerHTML.trim()) {
     alert('먼저 "명세서 생성" 버튼을 눌러 미리보기를 확인해 주세요.');
