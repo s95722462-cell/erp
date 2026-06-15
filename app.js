@@ -1000,14 +1000,31 @@ window.removeErpRow = function(type, btn) {
 
 window.fillErpProduct = function(input, type) {
   const name = input.value;
+  // 1. 제품 기본 정보 찾기
   const p = cache.products.find(x => x.name === name);
+  
+  // 2. 매출/매입 내역에서 가장 최근 단가 찾기
+  let lastPrice = p ? p.price : 0;
+  
+  // 최근 내역 검색 (매출이면 매출 내역, 매입이면 매입 내역에서 검색)
+  const history = type === 'sale' ? cache.sales : cache.purchases;
+  const itemHistory = history
+    .filter(r => r.item === name)
+    .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    
+  if (itemHistory.length > 0) {
+    lastPrice = itemHistory[0].unitPrice || lastPrice;
+  }
+
+  const tr = input.closest('tr');
   if (p) {
-    const tr = input.closest('tr');
     tr.querySelector('.erp-item-name').value = p.name;
     tr.querySelector('.erp-spec').value = p.spec || '';
-    tr.querySelector('.erp-price').value = (p.price || 0).toLocaleString();
-    calcErpRow(type, tr.querySelector('.erp-price'));
   }
+  
+  // 3. 단가 입력 필드 채우기
+  tr.querySelector('.erp-price').value = (lastPrice || 0).toLocaleString();
+  calcErpRow(type, tr.querySelector('.erp-price'));
 };
 
 window.calcErpRow = function(type, input) {

@@ -194,9 +194,8 @@ th:not(.no-col){text-transform:uppercase}
 @media (max-width: 768px) {
   #print-area { padding: 8px !important; }
   #print-area > div:last-child {
-    zoom: 0.5;
+    width: 100% !important;
     margin: 0 auto;
-    width: 210mm !important;
   }
 }
 .inv-copy-wrap{display:flex;flex-direction:column;gap:12px}
