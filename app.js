@@ -694,6 +694,12 @@ window.goto=function(id,btn){
   const fabTabs=['sales','purchase','customers','products'];
   const fab=document.getElementById('fab-btn');
   if(fab) fab.classList[fabTabs.includes(id)?'add':'remove']('active-fab');
+  
+  // 하단 고정 버튼 제어
+  document.querySelectorAll('.fixed-save-btn').forEach(b => b.classList.remove('active'));
+  if (id === 'sales') document.getElementById('fixed-save-sale').classList.add('active');
+  if (id === 'purchase') document.getElementById('fixed-save-buy').classList.add('active');
+
   if(id==='dash') renderDash();
   if(id==='sales'){
     renderSales();
@@ -2720,17 +2726,22 @@ window.mSaveSale=async function(){
   const custSel=document.getElementById('ms-sale-customer');
   const custName=custSel?.options[custSel.selectedIndex]?.text||'';
   const prodSel=document.getElementById('ms-sale-product-sel');
-  await addToCol('sales',{
-    date:document.getElementById('ms-sale-date').value,
-    buyer:custName,customer:custName,
-    productId:prodSel?.value||'',
-    item,spec:document.getElementById('ms-sale-spec').value,
-    summary:item,qty,unitPrice:price,currency:cur,
-    subtotal:sub,vat,total:sub+vat,
-    memo:document.getElementById('ms-sale-memo').value
-  });
-  closeSheet();
-  alert('✅ 매출이 등록되었습니다!');
+  try {
+    await addToCol('sales',{
+      date:document.getElementById('ms-sale-date').value,
+      buyer:custName,customer:custName,
+      productId:prodSel?.value||'',
+      item,spec:document.getElementById('ms-sale-spec').value,
+      summary:item,qty,unitPrice:price,currency:cur,
+      subtotal:sub,vat,total:sub+vat,
+      memo:document.getElementById('ms-sale-memo').value
+    });
+    closeSheet();
+    alert('✅ 매출이 등록되었습니다!');
+  } catch (e) {
+    alert('❌ 저장 실패: ' + e.message);
+    console.error(e);
+  }
 };
 window.mSavePurchase=async function(){
   const qty=rawNum(document.getElementById('ms-buy-qty').value);
@@ -2740,19 +2751,24 @@ window.mSavePurchase=async function(){
   const sub=qty*price;
   const vat=cur==='KRW'?Math.round(sub*.1):0;
   const prodSel=document.getElementById('ms-buy-product-sel');
-  await addToCol('purchases',{
-    date:document.getElementById('ms-buy-date').value,
-    vendor:document.getElementById('ms-buy-vendor').value,
-    item:document.getElementById('ms-buy-item').value,
-    spec:document.getElementById('ms-buy-spec').value,
-    productId:prodSel?.value||'',
-    qty,unitPrice:price,currency:cur,
-    subtotal:sub,vat,total:sub+vat,
-    invNo:document.getElementById('ms-buy-invno').value,
-    memo:document.getElementById('ms-buy-memo').value
-  });
-  closeSheet();
-  alert('✅ 매입이 저장되었습니다!');
+  try {
+    await addToCol('purchases',{
+      date:document.getElementById('ms-buy-date').value,
+      vendor:document.getElementById('ms-buy-vendor').value,
+      item:document.getElementById('ms-buy-item').value,
+      spec:document.getElementById('ms-buy-spec').value,
+      productId:prodSel?.value||'',
+      qty,unitPrice:price,currency:cur,
+      subtotal:sub,vat,total:sub+vat,
+      invNo:document.getElementById('ms-buy-invno').value,
+      memo:document.getElementById('ms-buy-memo').value
+    });
+    closeSheet();
+    alert('✅ 매입이 저장되었습니다!');
+  } catch (e) {
+    alert('❌ 저장 실패: ' + e.message);
+    console.error(e);
+  }
 };
 window.mSaveCustomer=async function(){
   const name=document.getElementById('ms-c-name').value.trim();
