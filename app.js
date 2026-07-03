@@ -1663,6 +1663,7 @@ window.saveCustomer=async function(){
     alert('✅ 새 거래처가 저장되었습니다!');
   }
   resetCustomerForm();
+  renderCustomers();
 };
 
 window.resetCustomerForm = function() {
