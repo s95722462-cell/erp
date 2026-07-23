@@ -1,5 +1,7 @@
 // ── 전역 상태 및 변수 ──
 let db;
+let auth;
+let authRestoring=false; // 새로고침 시 자동 로그인 복원 중 표시
 let currentUser=null;
 let companies=[];
 let activeCoIdx=0;
@@ -156,6 +158,58 @@ window.saveColumnSettings = function() {
   if (currentSettingTable === 'purchase') renderPurchase();
 };
 
+// ── HTML 이스케이프 (사용자 입력값을 화면에 표시할 때 XSS 방지용) ──
+function escapeHtml(s){
+  if(s===null || s===undefined) return '';
+  return String(s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+// ── 회사 고유 ID 생성 (배열 인덱스 대신 사용) ──
+function genId(){
+  if(window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  return 'co_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,10);
+}
+function curCoId(){ return companies[activeCoIdx]?.id; }
+
+// ── 기존(인덱스 기반) 회사 데이터를 고유 ID 기반 경로로 1회성 이전 ──
+async function migrateCoIdsIfNeeded(){
+  const needsMigration = companies.some(c=>!c.id);
+  if(!needsMigration) return;
+
+  const cols=['customers','products','sales','purchases'];
+  for(let idx=0; idx<companies.length; idx++){
+    if(companies[idx].id) continue; // 이미 ID가 있는 회사(가입 이후 추가분)는 건너뜀
+    const newId=genId();
+    for(const n of cols){
+      const oldRef=db.collection(`users/${currentUser.safeId}/companies/${idx}/${n}`);
+      const snap=await oldRef.get();
+      if(snap.empty) continue;
+      const docs=snap.docs;
+      // 500건 제한을 고려해 400건씩 배치 처리
+      for(let i=0;i<docs.length;i+=400){
+        const chunk=docs.slice(i,i+400);
+        const batch=db.batch();
+        chunk.forEach(d=>{
+          const newRef=db.collection(`users/${currentUser.safeId}/companies/${newId}/${n}`).doc(d.id);
+          batch.set(newRef, d.data());
+        });
+        await batch.commit();
+      }
+      // 이전 완료 후 기존 인덱스 경로 문서 삭제
+      for(let i=0;i<docs.length;i+=400){
+        const chunk=docs.slice(i,i+400);
+        const batch=db.batch();
+        chunk.forEach(d=>{
+          batch.delete(db.collection(`users/${currentUser.safeId}/companies/${idx}/${n}`).doc(d.id));
+        });
+        await batch.commit();
+      }
+    }
+    companies[idx].id=newId;
+  }
+  await saveUserMeta();
+}
+
 // ── 다크 모드 ──
 window.toggleDarkMode = function() {
   const isDark = document.body.getAttribute('data-theme') === 'dark';
@@ -222,6 +276,9 @@ function renderDynamicTable(tableId, data, tbodyId, extraCellFn) {
         if (c.k === 'party') val = r.buyer || r.customer || r.vendor || '';
         if (c.k === 'item') val = r.item || r.summary || '';
       }
+
+      // 사용자 입력 문자열은 화면에 넣기 전에 이스케이프 (XSS 방지)
+      if (typeof val === 'string') val = escapeHtml(val);
 
       // 특수 처리
       if (c.k === 'type') {
@@ -326,6 +383,7 @@ function initApp(){
     });
   }
   db = firebase.firestore();
+  auth = firebase.auth();
 
   // 초기화 후 실행할 작업들
   loadActiveCols();
@@ -334,6 +392,28 @@ function initApp(){
   // 테마 초기화
   const savedTheme = localStorage.getItem('ierp_theme') || 'light';
   document.body.setAttribute('data-theme', savedTheme);
+
+  // 새로고침 시 Firebase Auth 세션이 남아있다면 비밀번호 재입력 없이 자동 로그인 복원
+  // (기존처럼 localStorage에 평문 비밀번호를 저장해두는 방식은 사용하지 않음)
+  auth.onAuthStateChanged(async (user) => {
+    if (manualLoginInProgress) return; // doLogin()이 직접 처리 중이면 중복 실행 방지
+    if (user && !currentUser) {
+      try {
+        const safeId = (user.email || '').split('@')[0];
+        if (!safeId) return;
+        const snap = await db.collection('users').doc(safeId).get();
+        if (!snap.exists) { await auth.signOut(); return; }
+        const data = snap.data();
+        currentUser = { id: data.displayId || safeId, safeId, ...data };
+        companies = data.companies || [{ company: data.company || '', bizno: data.bizno || '', ceo: data.ceo || '', biztype: data.biztype || '', bizitem: data.bizitem || '', tel: data.tel || '', fax: data.fax || '', email: data.email || '', addr: data.addr || '', bank: data.bank || '', account: data.account || '', accountname: data.accountname || '', terms: data.terms || '', footer: data.footer || '' }];
+        activeCoIdx = data.activeCoIdx || 0;
+        await migrateCoIdsIfNeeded();
+        afterLogin();
+      } catch (e) {
+        console.error('자동 로그인 복원 실패:', e);
+      }
+    }
+  });
 }
 
 // ── 상태 ──
@@ -421,11 +501,9 @@ function loadSavedLogin(){
   const sid=localStorage.getItem('ierp_saved_id');
   const auto=localStorage.getItem('ierp_auto_login');
   if(sid){document.getElementById('l-id').value=sid;document.getElementById('save-id').checked=true;}
-  if(auto==='1'){
-    document.getElementById('auto-login').checked=true;
-    const uid=localStorage.getItem('ierp_uid'),pw=localStorage.getItem('ierp_pw');
-    if(uid&&pw){document.getElementById('l-id').value=uid;document.getElementById('l-pw').value=pw;doLogin();}
-  }
+  if(auto==='1'){document.getElementById('auto-login').checked=true;}
+  // 실제 자동 로그인 복원은 initApp()의 auth.onAuthStateChanged에서 Firebase Auth 세션으로 처리됩니다.
+  // (예전처럼 비밀번호를 localStorage에 평문으로 저장해두지 않습니다.)
 }
 window.switchTab=function(t,btn){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
@@ -433,43 +511,107 @@ window.switchTab=function(t,btn){
   document.getElementById('form-register').style.display=t==='register'?'block':'none';
 };
 
+function authEmailOf(safeId){ return safeId+'@ierp.local'; }
+
 window.doLogin=async function(){
-  if(!db){ alert("시스템 초기화 중입니다. 잠시만 기다려주세요."); return; }
+  if(!db||!auth){ alert("시스템 초기화 중입니다. 잠시만 기다려주세요."); return; }
   const id=document.getElementById('l-id').value;
   const pw=document.getElementById('l-pw').value;
   const err=document.getElementById('login-err');
+  err.textContent='';
   if(!id||!pw){err.textContent='아이디와 비밀번호를 입력하세요';return;}
   const safeId=btoa(encodeURIComponent(id)).replace(/[^a-zA-Z0-9]/g,'_');
+  const email=authEmailOf(safeId);
+  const keepLoggedIn=document.getElementById('auto-login').checked;
+  manualLoginInProgress=true;
   try{
-    const snap=await db.collection('users').doc(safeId).get();
+    await auth.setPersistence(keepLoggedIn?firebase.auth.Auth.Persistence.LOCAL:firebase.auth.Auth.Persistence.SESSION);
+
+    let signedIn=false;
+    try{
+      await auth.signInWithEmailAndPassword(email,pw);
+      signedIn=true;
+    }catch(authErr){
+      // Firebase 최신 버전은 보안상 "존재하지 않는 계정"과 "비밀번호 틀림"을 구분하지 않고
+      // auth/invalid-credential(또는 auth/invalid-login-credentials) 하나로 묶어서 반환하기도 합니다.
+      // 그래서 에러 코드만으로 판단하지 않고, 아래 Firestore 조회 결과로 실제 상태를 확인합니다.
+      if(authErr.code==='auth/too-many-requests'){err.textContent='잠시 후 다시 시도해 주세요';return;}
+      if(authErr.code==='auth/network-request-failed'){err.textContent='네트워크 연결을 확인해 주세요';return;}
+    }
+
+    let snap;
+    try{
+      snap=await db.collection('users').doc(safeId).get();
+    }catch(readErr){
+      if(readErr.code==='permission-denied'){
+        // 이미 Firebase Authentication으로 전환된 계정인데 비밀번호가 틀린 경우
+        // (전환 완료된 계정은 규칙상 인증 성공 전엔 문서를 읽을 수 없으므로 이 상황 자체가 곧 비밀번호 오류를 의미함)
+        err.textContent='비밀번호가 틀렸습니다';return;
+      }
+      throw readErr;
+    }
     if(!snap.exists){err.textContent='아이디가 존재하지 않습니다';return;}
     const data=snap.data();
-    if(data.pw!==simpleHash(pw)){err.textContent='비밀번호가 틀렸습니다';return;}
+
+    if(!signedIn){
+      if(!data.pw){
+        // 이미 전환된 계정인데 로그인에 실패한 경우 → 비밀번호가 틀린 것
+        err.textContent='비밀번호가 틀렸습니다';return;
+      }
+      // 레거시(평문 비밀번호를 취약한 해시로만 비교하던 구 방식) 계정 검증
+      if(data.pw!==simpleHash(pw)){err.textContent='비밀번호가 틀렸습니다';return;}
+      // 검증 통과 → 이번 로그인을 계기로 Firebase Authentication 계정으로 자동 전환
+      try{
+        await auth.createUserWithEmailAndPassword(email,pw);
+      }catch(createErr){
+        if(createErr.code==='auth/email-already-in-use'){err.textContent='비밀번호가 틀렸습니다';return;}
+        throw createErr;
+      }
+      // 더 이상 필요 없는 레거시 비밀번호 해시는 제거
+      await db.collection('users').doc(safeId).update({pw:firebase.firestore.FieldValue.delete()});
+    }
+
     if(document.getElementById('save-id').checked) localStorage.setItem('ierp_saved_id',id);
     else localStorage.removeItem('ierp_saved_id');
-    if(document.getElementById('auto-login').checked){localStorage.setItem('ierp_auto_login','1');localStorage.setItem('ierp_uid',id);localStorage.setItem('ierp_pw',pw);}
-    else{localStorage.removeItem('ierp_auto_login');localStorage.removeItem('ierp_uid');localStorage.removeItem('ierp_pw');}
+    if(keepLoggedIn) localStorage.setItem('ierp_auto_login','1');
+    else localStorage.removeItem('ierp_auto_login');
+    // 예전 버전에서 남아있을 수 있는 평문 비밀번호 흔적 정리
+    localStorage.removeItem('ierp_pw');
+    localStorage.removeItem('ierp_uid');
+
     currentUser={id,safeId,...data};
     companies=data.companies||[{company:data.company||'',bizno:data.bizno||'',ceo:data.ceo||'',biztype:data.biztype||'',bizitem:data.bizitem||'',tel:data.tel||'',fax:data.fax||'',email:data.email||'',addr:data.addr||'',bank:data.bank||'',account:data.account||'',accountname:data.accountname||'',terms:data.terms||'',footer:data.footer||''}];
     activeCoIdx=data.activeCoIdx||0;
+    await migrateCoIdsIfNeeded();
     afterLogin();
   }catch(e){err.textContent='오류: '+e.message;}
+  finally{ manualLoginInProgress=false; }
 };
 
 window.doRegister=async function(){
-  if(!db){ alert("시스템 초기화 중입니다. 잠시만 기다려주세요."); return; }
+  if(!db||!auth){ alert("시스템 초기화 중입니다. 잠시만 기다려주세요."); return; }
   const id=document.getElementById('r-id').value;
   const pw=document.getElementById('r-pw').value;
   const pw2=document.getElementById('r-pw2').value;
   const company=document.getElementById('r-company').value.trim();
   const err=document.getElementById('reg-err');
+  err.textContent='';
   if(!id||!pw||!company){err.textContent='아이디, 비밀번호, 상호명은 필수입니다';return;}
   if(pw.length<6){err.textContent='비밀번호는 6자 이상이어야 합니다';return;}
   if(pw!==pw2){err.textContent='비밀번호가 일치하지 않습니다';return;}
   const safeId=btoa(encodeURIComponent(id)).replace(/[^a-zA-Z0-9]/g,'_');
+  const email=authEmailOf(safeId);
+  manualLoginInProgress=true;
   try{
     const snap=await db.collection('users').doc(safeId).get();
     if(snap.exists){err.textContent='이미 사용 중인 아이디입니다';return;}
+    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    try{
+      await auth.createUserWithEmailAndPassword(email,pw);
+    }catch(createErr){
+      if(createErr.code==='auth/email-already-in-use'){err.textContent='이미 사용 중인 아이디입니다';return;}
+      throw createErr;
+    }
     const co={
       company,
       bizno:document.getElementById('r-bizno').value,
@@ -479,18 +621,20 @@ window.doRegister=async function(){
       tel:document.getElementById('r-tel').value,
       email:document.getElementById('r-email')?.value||'',
       addr:document.getElementById('r-addr').value,
-      fax:'',bank:'',account:'',accountname:'',terms:'',footer:''
+      fax:'',bank:'',account:'',accountname:'',terms:'',footer:'',id:genId()
     };
-    const ud={pw:simpleHash(pw),displayId:id,companies:[co],activeCoIdx:0,createdAt:new Date().toISOString()};
+    // 비밀번호는 Firebase Authentication이 관리하므로 Firestore 문서에는 저장하지 않음
+    const ud={displayId:id,companies:[co],activeCoIdx:0,createdAt:new Date().toISOString()};
     await db.collection('users').doc(safeId).set(ud);
     currentUser={id,safeId,...ud};
     companies=[co];activeCoIdx=0;
     afterLogin();
   }catch(e){err.textContent='오류: '+e.message;}
+  finally{ manualLoginInProgress=false; }
 };
 
-window.doLogout=function(){
-  if(!localStorage.getItem('ierp_auto_login')){localStorage.removeItem('ierp_uid');localStorage.removeItem('ierp_pw');}
+window.doLogout=async function(){
+  try{ await auth.signOut(); }catch(e){ /* 무시 */ }
   listeners.forEach(u=>u());listeners=[];
   cache={customers:[],products:[],sales:[],purchases:[]};currentUser=null;companies=[];
   document.getElementById('main-app').style.display='none';
@@ -517,7 +661,7 @@ function afterLogin(){
 // ── 회사 전환 ──
 function updateCompanySwitcher(){
   const sel=document.getElementById('active-company-sel');
-  sel.innerHTML=companies.map((c,i)=>`<option value="${i}"${i===activeCoIdx?' selected':''}>${c.company||'회사'+(i+1)}</option>`).join('');
+  sel.innerHTML=companies.map((c,i)=>`<option value="${i}"${i===activeCoIdx?' selected':''}>${escapeHtml(c.company||'회사'+(i+1))}</option>`).join('');
 }
 window.switchCompany=function(idx){
   activeCoIdx=parseInt(idx);
@@ -556,7 +700,7 @@ function renderCompanyCards(){
 
   // 편집 셀렉트 업데이트
   const sel=document.getElementById('s-co-sel');
-  if(sel) sel.innerHTML='<option value="">— 선택 —</option>'+companies.map((c,i)=>`<option value="${i}">${c.company||'회사'+(i+1)}</option>`).join('');
+  if(sel) sel.innerHTML='<option value="">— 선택 —</option>'+companies.map((c,i)=>`<option value="${i}">${escapeHtml(c.company||'회사'+(i+1))}</option>`).join('');
 }
 
 window.editCoInSettings=function(idx){
@@ -587,11 +731,27 @@ window.saveCoInfo=async function(){
   renderCompanyCards();
   alert('✅ 회사 정보가 저장되었습니다!');};
 
+async function deleteCoData(coId){
+  if(!coId) return; // ID가 없는(마이그레이션 전) 회사는 건드리지 않음
+  const cols=['customers','products','sales','purchases'];
+  for(const n of cols){
+    const ref=db.collection(`users/${currentUser.safeId}/companies/${coId}/${n}`);
+    const snap=await ref.get();
+    for(let i=0;i<snap.docs.length;i+=400){
+      const batch=db.batch();
+      snap.docs.slice(i,i+400).forEach(d=>batch.delete(d.ref));
+      await batch.commit();
+    }
+  }
+}
+
 window.deleteCoByIdx=async function(idx){
-  if(!confirm(`"${companies[idx]?.company||'이 회사'}"를 삭제하시겠습니까?`)) return;
+  if(!confirm(`"${companies[idx]?.company||'이 회사'}"를 삭제하시겠습니까? 등록된 매출/매입/거래처 데이터도 함께 삭제됩니다.`)) return;
+  const removedId=companies[idx]?.id;
   companies.splice(idx,1);
   if(activeCoIdx>=companies.length) activeCoIdx=companies.length-1;
   await saveUserMeta();
+  await deleteCoData(removedId);
   updateCompanySwitcher();
   renderCompanyCards();
 };
@@ -624,7 +784,7 @@ window.saveNewCompany=async function(){
     email:document.getElementById('nc-email').value,
     addr:document.getElementById('nc-addr').value,
     bank:document.getElementById('nc-bank').value,
-    account:'',accountname:'',terms:'',footer:''
+    account:'',accountname:'',terms:'',footer:'',id:genId()
   };
   companies.push(co);
   await saveUserMeta();
@@ -640,10 +800,10 @@ async function saveUserMeta(){
 
 // ── Firebase 리스너 ──
 // 회사별 데이터 경로: users/{uid}/companies/{coIdx}/{collection}
-function colPath(n){return db.collection(`users/${currentUser.safeId}/companies/${activeCoIdx}/${n}`);}
+function colPath(n){return db.collection(`users/${currentUser.safeId}/companies/${curCoId()}/${n}`);}
 async function addToCol(n,d){return await colPath(n).add({...d,createdAt:firebase.firestore.FieldValue.serverTimestamp()});}
-async function delFromCol(n,id){await db.collection(`users/${currentUser.safeId}/companies/${activeCoIdx}/${n}`).doc(id).delete();}
-async function updFromCol(n,id,d){await db.collection(`users/${currentUser.safeId}/companies/${activeCoIdx}/${n}`).doc(id).update(d);}
+async function delFromCol(n,id){await db.collection(`users/${currentUser.safeId}/companies/${curCoId()}/${n}`).doc(id).delete();}
+async function updFromCol(n,id,d){await db.collection(`users/${currentUser.safeId}/companies/${curCoId()}/${n}`).doc(id).update(d);}
 
 function startListeners(){
   // 기존 리스너 해제
@@ -652,7 +812,7 @@ function startListeners(){
   cache={customers:[],products:[],sales:[],purchases:[]};
 
   const listen=(n,k,cb)=>{
-    const u=db.collection(`users/${currentUser.safeId}/companies/${activeCoIdx}/${n}`)
+    const u=db.collection(`users/${currentUser.safeId}/companies/${curCoId()}/${n}`)
       .orderBy('createdAt','desc').onSnapshot(snap=>{
         cache[k]=snap.docs.map(d=>({id:d.id,...d.data()}));setSynced();cb();
       },()=>setOffline());
@@ -795,11 +955,11 @@ function renderDash(){
   document.getElementById('recent-tbody').innerHTML=recent.length
     ?recent.map((r,i)=>`<tr>
       <td class="no-col">${i+1}</td>
-      <td>${r.date||''}</td>
+      <td>${escapeHtml(r.date||'')}</td>
       <td><span class="tag ${r._t==='매출'?'tag-sale':'tag-buy'}">${r._t}</span></td>
-      <td>${r.party||''}</td>
-      <td style="font-weight:600">${r.desc||''}</td>
-      <td style="color:var(--text2)">${r.spec||''}</td>
+      <td>${escapeHtml(r.party||'')}</td>
+      <td style="font-weight:600">${escapeHtml(r.desc||'')}</td>
+      <td style="color:var(--text2)">${escapeHtml(r.spec||'')}</td>
       <td style="font-weight:700;text-align:right">${fmt(r._total,r.currency)}</td>
     </tr>`).join('')
     :'<tr class="empty-row"><td colspan="7">거래 내역이 없습니다</td></tr>';
@@ -895,14 +1055,14 @@ function populateSelects(){
   const dc=document.getElementById('d-customer');
   if(dc){
     const v=dc.value;
-    dc.innerHTML='<option value="">전체</option>'+cache.customers.map(c=>`<option value="${c.id}" data-name="${c.name}">${c.name}</option>`).join('');
+    dc.innerHTML='<option value="">전체</option>'+cache.customers.map(c=>`<option value="${c.id}" data-name="${escapeHtml(c.name)}">${escapeHtml(c.name)}</option>`).join('');
     dc.value=v;
   }
 
   // 품목 데이터리스트 (ERP용)
   const dl = document.getElementById('products-list');
   if(dl) {
-    dl.innerHTML = cache.products.map(p => `<option value="${p.name}${p.spec ? ' (' + p.spec + ')' : ''}">`).join('');
+    dl.innerHTML = cache.products.map(p => `<option value="${escapeHtml(p.name)}${p.spec ? ' (' + escapeHtml(p.spec) + ')' : ''}">`).join('');
   }
 }
 
@@ -920,8 +1080,8 @@ function renderSidebar(type) {
 
   listEl.innerHTML = list.map(c => `
     <div class="sidebar-item" onclick="selectSidebarItem('${type}', '${c.id}')" id="${type}-item-${c.id}">     
-      <div class="item-title">${c.name}</div>
-      <div class="item-sub">${c.bizno || ''} ${c.contact ? '| ' + c.contact : ''}</div>
+      <div class="item-title">${escapeHtml(c.name)}</div>
+      <div class="item-sub">${escapeHtml(c.bizno || '')} ${c.contact ? '| ' + escapeHtml(c.contact) : ''}</div>
     </div>
   `).join('');
 }
@@ -1664,6 +1824,7 @@ window.saveCustomer=async function(){
   }
   resetCustomerForm();
   renderCustomers();
+  renderSidebar('cust');
 };
 
 window.resetCustomerForm = function() {
@@ -1691,11 +1852,11 @@ function renderCustomers(){
   
   tbody.innerHTML=cache.customers.length
     ?cache.customers.map((r,i)=>`<tr>
-      <td class="no-col">${i+1}</td><td style="font-weight:600">${r.name}</td>
-      <td>${r.country||''}</td><td style="color:var(--text2)">${r.bizno||''}</td>
-      <td>${r.contact||''}</td><td>${r.tel||''}</td>
-      <td style="color:var(--blue)">${r.email||''}</td>
-      <td style="color:var(--text2)">${r.memo||''}</td>
+      <td class="no-col">${i+1}</td><td style="font-weight:600">${escapeHtml(r.name)}</td>
+      <td>${escapeHtml(r.country||'')}</td><td style="color:var(--text2)">${escapeHtml(r.bizno||'')}</td>
+      <td>${escapeHtml(r.contact||'')}</td><td>${escapeHtml(r.tel||'')}</td>
+      <td style="color:var(--blue)">${escapeHtml(r.email||'')}</td>
+      <td style="color:var(--text2)">${escapeHtml(r.memo||'')}</td>
       <td class="no-print" style="white-space:nowrap">
         <button class="btn btn-sm btn-edit" onclick="openEdit('customers','${r.id}')">수정</button>
         <button class="btn btn-sm btn-danger" onclick="delCust('${r.id}')">삭제</button>
@@ -1733,12 +1894,12 @@ window.saveProduct=async function(){
 function renderProducts(){
   document.getElementById('products-tbody').innerHTML=cache.products.length
     ?cache.products.map((r,i)=>`<tr>
-      <td class="no-col">${i+1}</td><td style="color:var(--text2)">${r.code||''}</td>
-      <td style="font-weight:600">${r.name}</td><td style="color:var(--text2)">${r.spec||''}</td>
-      <td>${r.maker||''}</td>
+      <td class="no-col">${i+1}</td><td style="color:var(--text2)">${escapeHtml(r.code||'')}</td>
+      <td style="font-weight:600">${escapeHtml(r.name)}</td><td style="color:var(--text2)">${escapeHtml(r.spec||'')}</td>
+      <td>${escapeHtml(r.maker||'')}</td>
       <td style="font-weight:500;text-align:right">${fmt(r.price,r.currency)}</td>
       <td><span class="tag tag-${(r.currency||'krw').toLowerCase()}">${r.currency}</span></td>
-      <td>${r.unit||''}</td><td style="color:var(--text2)">${r.memo||''}</td>
+      <td>${escapeHtml(r.unit||'')}</td><td style="color:var(--text2)">${escapeHtml(r.memo||'')}</td>
       <td class="no-print" style="white-space:nowrap">
         <button class="btn btn-sm btn-edit" onclick="openEdit('products','${r.id}')">수정</button>
         <button class="btn btn-sm btn-danger" onclick="delProd('${r.id}')">삭제</button>
@@ -1769,7 +1930,7 @@ window.openEdit=function(col,id){
       ${fields.map(f=>`<div class="fg"><label>${f.l}</label>
         ${f.t==='select'
           ?`<select id="ef-${f.k}">${(f.opts||[]).map(o=>`<option${item[f.k]===o?' selected':''}>${o}</option>`).join('')}</select>`
-          :`<input type="${f.t==='number'?'text':'text'}" id="ef-${f.k}" value="${item[f.k]||''}" ${f.t==='number'?'oninput="fmtInput(this)"':''}>`}
+          :`<input type="${f.t==='number'?'text':'text'}" id="ef-${f.k}" value="${escapeHtml(item[f.k]||'')}" ${f.t==='number'?'oninput="fmtInput(this)"':''}>`}
       </div>`).join('')}
     </div>`;
   document.getElementById('edit-modal').style.display='flex';
@@ -1945,9 +2106,19 @@ window.saveAccountSettings=async function(){
   const newpw=document.getElementById('s-newpw').value;
   if(!newpw){alert('변경할 비밀번호를 입력하세요');return;}
   if(newpw.length<6){alert('비밀번호는 6자 이상이어야 합니다');return;}
-  await db.collection('users').doc(currentUser.safeId).update({pw:simpleHash(newpw)});
-  document.getElementById('s-newpw').value='';
-  alert('✅ 비밀번호가 변경되었습니다!');
+  try{
+    await auth.currentUser.updatePassword(newpw);
+    // 레거시 해시가 아직 남아있다면 함께 정리
+    await db.collection('users').doc(currentUser.safeId).update({pw:firebase.firestore.FieldValue.delete()}).catch(()=>{});
+    document.getElementById('s-newpw').value='';
+    alert('✅ 비밀번호가 변경되었습니다!');
+  }catch(e){
+    if(e.code==='auth/requires-recent-login'){
+      alert('보안을 위해 비밀번호 변경 전 다시 로그인해 주세요. 로그아웃 후 다시 로그인한 뒤 시도해 주세요.');
+    }else{
+      alert('비밀번호 변경 중 오류가 발생했습니다: '+e.message);
+    }
+  }
 };
 
 window.changeLoginId = async function(btn) {
@@ -1966,26 +2137,40 @@ window.changeLoginId = async function(btn) {
     // 1. 중복 확인
     const checkSnap = await db.collection('users').doc(newSafeId).get();
     if (checkSnap.exists) { alert('이미 사용 중인 아이디입니다'); return; }
+
+    // 2. Firebase Authentication 계정의 이메일(내부적으로 아이디 기반)을 먼저 변경
+    //    (최근 로그인 필요 오류가 나면 데이터 이동 전에 여기서 중단됨)
+    try {
+      await auth.currentUser.updateEmail(authEmailOf(newSafeId));
+    } catch (authErr) {
+      if (authErr.code === 'auth/requires-recent-login') {
+        alert('보안을 위해 아이디 변경 전 다시 로그인해 주세요. 로그아웃 후 다시 로그인한 뒤 시도해 주세요.');
+        return;
+      }
+      throw authErr;
+    }
     
-    // 2. 마이그레이션 시작 (UI 알림)
+    // 3. 마이그레이션 시작 (UI 알림)
     if (btn) {
       btn.disabled = true;
       btn.textContent = '변경 중...';
     }
     
-    // 3. 사용자 문서 복사
+    // 4. 사용자 문서 복사
     const userDoc = await db.collection('users').doc(oldSafeId).get();
     const userData = userDoc.data();
     userData.displayId = newId;
     await db.collection('users').doc(newSafeId).set(userData);
     
-    // 4. 데이터 이동 (회사별)
+    // 5. 데이터 이동 (회사별 — 배열 인덱스가 아닌 회사 고유 ID 기준 경로 사용)
     const subCols = ['customers', 'products', 'sales', 'purchases'];
     for (let i = 0; i < companies.length; i++) {
+      const coId = companies[i].id;
+      if (!coId) continue; // 아직 고유 ID로 이전되지 않은 회사(정상적으론 발생하지 않음)
       for (const colName of subCols) {
-        const subSnap = await db.collection(`users/${oldSafeId}/companies/${i}/${colName}`).get();
+        const subSnap = await db.collection(`users/${oldSafeId}/companies/${coId}/${colName}`).get();
         for (const doc of subSnap.docs) {
-          await db.collection(`users/${newSafeId}/companies/${i}/${colName}`).doc(doc.id).set(doc.data());
+          await db.collection(`users/${newSafeId}/companies/${coId}/${colName}`).doc(doc.id).set(doc.data());
           await doc.ref.delete(); // 데이터 이동이므로 기존 데이터 삭제
         }
       }
@@ -1999,14 +2184,11 @@ window.changeLoginId = async function(btn) {
       }
     }
     
-    // 5. 기존 사용자 문서 삭제
+    // 6. 기존 사용자 문서 삭제
     await db.collection('users').doc(oldSafeId).delete();
     
-    // 6. 로컬스토리지 정보 업데이트
+    // 7. 로컬스토리지 정보 업데이트
     if (localStorage.getItem('ierp_saved_id')) localStorage.setItem('ierp_saved_id', newId);
-    if (localStorage.getItem('ierp_auto_login') === '1') {
-      localStorage.setItem('ierp_uid', newId);
-    }
     
     alert('✅ 아이디 변경이 완료되었습니다!\n새로운 아이디로 다시 로그인해 주세요.');
     location.reload(); 
@@ -2239,9 +2421,9 @@ window.doGlobalSearch = function() {
          style="padding:12px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.2s">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
         <span class="tag ${r.type==='매출'?'tag-sale':(r.type==='매입'?'tag-buy':'tag-usd')}" style="font-size:9px">${r.type}</span>
-        <strong style="font-size:14px">${r.title}</strong>
+        <strong style="font-size:14px">${escapeHtml(r.title)}</strong>
       </div>
-      <div style="font-size:12px;color:var(--text2)">${r.sub}</div>
+      <div style="font-size:12px;color:var(--text2)">${escapeHtml(r.sub)}</div>
     </div>
   `).join('');
 };
@@ -3132,8 +3314,8 @@ function mSalesCard(r,i){
   return `<div class="m-card">
     <div class="m-card-top">
       <div>
-        <div class="m-card-name">${r.buyer||r.customer||'—'}</div>
-        <div class="m-card-sub">${r.date||''} · ${r.item||r.summary||''}</div>
+        <div class="m-card-name">${escapeHtml(r.buyer||r.customer||'—')}</div>
+        <div class="m-card-sub">${escapeHtml(r.date||'')} · ${escapeHtml(r.item||r.summary||'')}</div>
       </div>
       <div style="text-align:right">
         <div style="font-size:16px;font-weight:700;color:var(--green)">${fmt(getTotal(r),r.currency)}</div>
@@ -3141,11 +3323,11 @@ function mSalesCard(r,i){
       </div>
     </div>
     <div class="m-card-rows">
-      ${r.spec?`<div class="m-card-row"><span class="m-card-lbl">규격</span><span class="m-card-val">${r.spec}</span></div>`:''}
+      ${r.spec?`<div class="m-card-row"><span class="m-card-lbl">규격</span><span class="m-card-val">${escapeHtml(r.spec)}</span></div>`:''}
       <div class="m-card-row"><span class="m-card-lbl">수량/단가</span><span class="m-card-val">${r.qty||'—'} × ${r.unitPrice?fmt(r.unitPrice,r.currency):'—'}</span></div>
       <div class="m-card-row"><span class="m-card-lbl">공급가액</span><span class="m-card-val">${fmt(r.subtotal||r.total,r.currency)}</span></div>
       <div class="m-card-row"><span class="m-card-lbl">세액</span><span class="m-card-val">${r.currency==='KRW'?fmt(r.vat||0,'KRW'):'-'}</span></div>
-      ${r.memo?`<div class="m-card-row"><span class="m-card-lbl">비고</span><span class="m-card-val">${r.memo}</span></div>`:''}
+      ${r.memo?`<div class="m-card-row"><span class="m-card-lbl">비고</span><span class="m-card-val">${escapeHtml(r.memo)}</span></div>`:''}
     </div>
     <div class="m-card-actions">
       <button class="btn btn-edit btn-sm" onclick="openEdit('sales','${r.id}')">✏️ 수정</button>
@@ -3158,8 +3340,8 @@ function mPurchaseCard(r,i){
   return `<div class="m-card">
     <div class="m-card-top">
       <div>
-        <div class="m-card-name">${r.vendor||'—'}</div>
-        <div class="m-card-sub">${r.date||''} · ${r.item||''}</div>
+        <div class="m-card-name">${escapeHtml(r.vendor||'—')}</div>
+        <div class="m-card-sub">${escapeHtml(r.date||'')} · ${escapeHtml(r.item||'')}</div>
       </div>
       <div style="text-align:right">
         <div style="font-size:16px;font-weight:700;color:var(--blue)">${fmt(r.total,r.currency)}</div>
@@ -3167,12 +3349,12 @@ function mPurchaseCard(r,i){
       </div>
     </div>
     <div class="m-card-rows">
-      ${r.spec?`<div class="m-card-row"><span class="m-card-lbl">규격</span><span class="m-card-val">${r.spec}</span></div>`:''}
+      ${r.spec?`<div class="m-card-row"><span class="m-card-lbl">규격</span><span class="m-card-val">${escapeHtml(r.spec)}</span></div>`:''}
       <div class="m-card-row"><span class="m-card-lbl">수량/단가</span><span class="m-card-val">${r.qty||'—'} × ${r.unitPrice?fmt(r.unitPrice,r.currency):'—'}</span></div>
       <div class="m-card-row"><span class="m-card-lbl">공급가액</span><span class="m-card-val">${fmt(r.subtotal||r.total,r.currency)}</span></div>
       <div class="m-card-row"><span class="m-card-lbl">세액</span><span class="m-card-val">${r.currency==='KRW'?fmt(r.vat||0,'KRW'):'-'}</span></div>
-      ${r.invNo?`<div class="m-card-row"><span class="m-card-lbl">인보이스</span><span class="m-card-val">${r.invNo}</span></div>`:''}
-      ${r.memo?`<div class="m-card-row"><span class="m-card-lbl">비고</span><span class="m-card-val">${r.memo}</span></div>`:''}
+      ${r.invNo?`<div class="m-card-row"><span class="m-card-lbl">인보이스</span><span class="m-card-val">${escapeHtml(r.invNo)}</span></div>`:''}
+      ${r.memo?`<div class="m-card-row"><span class="m-card-lbl">비고</span><span class="m-card-val">${escapeHtml(r.memo)}</span></div>`:''}
     </div>
     <div class="m-card-actions">
       <button class="btn btn-edit btn-sm" onclick="openEdit('purchases','${r.id}')">✏️ 수정</button>
@@ -3185,16 +3367,16 @@ function mCustomerCard(r,i){
   return `<div class="m-card">
     <div class="m-card-top">
       <div>
-        <div class="m-card-name">${r.name}</div>
-        <div class="m-card-sub">${r.country||''} ${r.bizno?'· '+r.bizno:''}</div>
+        <div class="m-card-name">${escapeHtml(r.name)}</div>
+        <div class="m-card-sub">${escapeHtml(r.country||'')} ${r.bizno?'· '+escapeHtml(r.bizno):''}</div>
       </div>
     </div>
     <div class="m-card-rows">
-      ${r.contact?`<div class="m-card-row"><span class="m-card-lbl">담당자</span><span class="m-card-val">${r.contact}</span></div>`:''}
-      ${r.tel?`<div class="m-card-row"><span class="m-card-lbl">연락처</span><span class="m-card-val"><a href="tel:${r.tel}" style="color:var(--blue)">${r.tel}</a></span></div>`:''}
-      ${r.email?`<div class="m-card-row"><span class="m-card-lbl">이메일</span><span class="m-card-val" style="word-break:break-all">${r.email}</span></div>`:''}
-      ${r.addr?`<div class="m-card-row"><span class="m-card-lbl">주소</span><span class="m-card-val" style="word-break:break-all">${r.addr}</span></div>`:''}
-      ${r.memo?`<div class="m-card-row"><span class="m-card-lbl">메모</span><span class="m-card-val">${r.memo}</span></div>`:''}
+      ${r.contact?`<div class="m-card-row"><span class="m-card-lbl">담당자</span><span class="m-card-val">${escapeHtml(r.contact)}</span></div>`:''}
+      ${r.tel?`<div class="m-card-row"><span class="m-card-lbl">연락처</span><span class="m-card-val"><a href="tel:${escapeHtml(r.tel)}" style="color:var(--blue)">${escapeHtml(r.tel)}</a></span></div>`:''}
+      ${r.email?`<div class="m-card-row"><span class="m-card-lbl">이메일</span><span class="m-card-val" style="word-break:break-all">${escapeHtml(r.email)}</span></div>`:''}
+      ${r.addr?`<div class="m-card-row"><span class="m-card-lbl">주소</span><span class="m-card-val" style="word-break:break-all">${escapeHtml(r.addr)}</span></div>`:''}
+      ${r.memo?`<div class="m-card-row"><span class="m-card-lbl">메모</span><span class="m-card-val">${escapeHtml(r.memo)}</span></div>`:''}
     </div>
     <div class="m-card-actions">
       <button class="btn btn-edit btn-sm" onclick="openEdit('customers','${r.id}')">✏️ 수정</button>
@@ -3207,18 +3389,18 @@ function mProductCard(r,i){
   return `<div class="m-card">
     <div class="m-card-top">
       <div>
-        <div class="m-card-name">${r.name}</div>
-        <div class="m-card-sub">${r.code?r.code+' · ':''}${r.spec||''}</div>
+        <div class="m-card-name">${escapeHtml(r.name)}</div>
+        <div class="m-card-sub">${r.code?escapeHtml(r.code)+' · ':''}${escapeHtml(r.spec||'')}</div>
       </div>
       <div style="text-align:right">
         <div style="font-size:15px;font-weight:700">${fmt(r.price,r.currency)}</div>
-        <div style="font-size:11px;color:var(--text2)">${r.unit||'EA'}</div>
+        <div style="font-size:11px;color:var(--text2)">${escapeHtml(r.unit||'EA')}</div>
       </div>
     </div>
     <div class="m-card-rows">
-      ${r.maker?`<div class="m-card-row"><span class="m-card-lbl">제조사</span><span class="m-card-val">${r.maker}</span></div>`:''}
-      <div class="m-card-row"><span class="m-card-lbl">재고</span><span class="m-card-val" style="${(r.stock||0)<=0?'color:var(--red)':'color:var(--green)'}">${(r.stock||0).toLocaleString()} ${r.unit||'EA'}</span></div>
-      ${r.safeStock?`<div class="m-card-row"><span class="m-card-lbl">안전재고</span><span class="m-card-val">${r.safeStock}</span></div>`:''}
+      ${r.maker?`<div class="m-card-row"><span class="m-card-lbl">제조사</span><span class="m-card-val">${escapeHtml(r.maker)}</span></div>`:''}
+      <div class="m-card-row"><span class="m-card-lbl">재고</span><span class="m-card-val" style="${(r.stock||0)<=0?'color:var(--red)':'color:var(--green)'}">${(r.stock||0).toLocaleString()} ${escapeHtml(r.unit||'EA')}</span></div>
+      ${r.safeStock?`<div class="m-card-row"><span class="m-card-lbl">안전재고</span><span class="m-card-val">${escapeHtml(String(r.safeStock))}</span></div>`:''}
     </div>
     <div class="m-card-actions">
       <button class="btn btn-edit btn-sm" onclick="openEdit('products','${r.id}')">✏️ 수정</button>
@@ -3236,11 +3418,11 @@ function mStockCard(s,i){
   return `<div class="m-card">
     <div class="m-card-top">
       <div>
-        <div class="m-card-name">${s.name}</div>
-        <div class="m-card-sub">${s.code?s.code+' · ':''}${s.spec||''}</div>
+        <div class="m-card-name">${escapeHtml(s.name)}</div>
+        <div class="m-card-sub">${s.code?escapeHtml(s.code)+' · ':''}${escapeHtml(s.spec||'')}</div>
       </div>
       <div style="text-align:right">
-        <div style="font-size:16px;font-weight:700;color:${statusColor}">${Number(s.current).toLocaleString()} ${s.unit||'EA'}</div>
+        <div style="font-size:16px;font-weight:700;color:${statusColor}">${Number(s.current).toLocaleString()} ${escapeHtml(s.unit||'EA')}</div>
         <div style="font-size:11px;font-weight:600;color:${statusColor}">${status}</div>
       </div>
     </div>
@@ -3248,7 +3430,7 @@ function mStockCard(s,i){
       <div class="m-card-row"><span class="m-card-lbl">재고금액</span><span class="m-card-val" style="font-weight:700;color:var(--green)">${fmt(s.stockValue,s.stockValueCur)}</span></div>
       <div class="m-card-row"><span class="m-card-lbl">매입(입고)</span><span class="m-card-val" style="color:var(--blue)">+${Number(s.inQty).toLocaleString()}</span></div>
       <div class="m-card-row"><span class="m-card-lbl">매출(출고)</span><span class="m-card-val" style="color:var(--red)">-${Number(s.outQty).toLocaleString()}</span></div>
-      ${s.safeStock?`<div class="m-card-row"><span class="m-card-lbl">안전재고</span><span class="m-card-val">${s.safeStock}</span></div>`:''}
+      ${s.safeStock?`<div class="m-card-row"><span class="m-card-lbl">안전재고</span><span class="m-card-val">${escapeHtml(String(s.safeStock))}</span></div>`:''}
     </div>
     <div class="m-card-actions">
       <button class="btn btn-edit btn-sm" onclick="openEdit('products','${s.id}')">✏️ 수정 / 재고조정</button>
