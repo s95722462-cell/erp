@@ -1239,9 +1239,13 @@ window.saveErpData = async function(type) {
   const items = [];
   for (let r of tbody.rows) {
     const item = r.querySelector('.erp-item-name').value;
+    const spec = r.querySelector('.erp-spec').value;
     const qty = rawNum(r.querySelector('.erp-qty').value);
     const price = rawNum(r.querySelector('.erp-price').value);
     if (!item) continue;
+
+    // 품목명+규격이 등록된 품목과 일치하면 productId로 연결 (재고 계산이 정확히 매칭되도록)
+    const matchedProduct = cache.products.find(p => p.name === item && (p.spec || '') === (spec || ''));
 
     const sub = qty * price;
     const vat = cur === 'KRW' ? Math.round(sub * 0.1) : 0;
@@ -1255,6 +1259,8 @@ window.saveErpData = async function(type) {
       vat,
       total: sub + vat,
       invNo,
+      spec,
+      productId: matchedProduct ? matchedProduct.id : '',
       memo: r.querySelector('.erp-memo').value,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     };
