@@ -104,6 +104,15 @@ th:last-child { border-right: none; }
 .kpi-val{font-size:20px;font-weight:700;letter-spacing:-.5px}
 .kpi-val.g{color:var(--green)}.kpi-val.r{color:var(--red)}.kpi-val.b{color:var(--blue)}
 .kpi-val.n{color:var(--text)}
+
+/* 구분(매출/매입) 및 통화 배지 — 대시보드 매출합계(빨강)/매입합계(파랑) 색상 관례를 그대로 따름 */
+.tag{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;line-height:1.6}
+.tag-sale{background:var(--red-bg);color:var(--red)}
+.tag-buy{background:var(--blue-bg);color:var(--blue)}
+.tag-krw{background:var(--green-bg);color:var(--green)}
+.tag-usd{background:var(--blue-bg);color:var(--blue)}
+.tag-jpy{background:var(--amber-bg);color:var(--amber)}
+.tag-eur{background:var(--purple-bg);color:var(--purple)}
 .sec{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin:14px 0 8px}
 .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:12px}
 .fg{display:flex;flex-direction:column;gap:4px}
