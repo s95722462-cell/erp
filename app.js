@@ -1,7 +1,7 @@
 // ── 전역 상태 및 변수 ──
 let db;
 let auth;
-let authRestoring=false; // 새로고침 시 자동 로그인 복원 중 표시
+let manualLoginInProgress=false; // doLogin()/doRegister()이 진행 중일 때 onAuthStateChanged의 자동 복원 로직과 중복 실행되지 않도록 막는 플래그
 let currentUser=null;
 let companies=[];
 let activeCoIdx=0;
