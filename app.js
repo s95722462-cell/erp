@@ -289,7 +289,11 @@ function renderDynamicTable(tableId, data, tbodyId, extraCellFn) {
       } else if (c.k === 'qty') {
         val = val ? Number(val).toLocaleString() : '—';
       } else if (['item', 'party', 'buyer', 'vendor', 'name'].includes(c.k)) {
-        val = `<strong>${val}</strong>`;
+        if ((tableId === 'sales' && c.k === 'buyer') || (tableId === 'purchase' && c.k === 'vendor')) {
+          val = `<strong class="party-link" onclick="filterByParty('${tableId}', this)" title="클릭하면 이 거래처 내역만 보기" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px">${val}</strong>`;
+        } else {
+          val = `<strong>${val}</strong>`;
+        }
       } else if (c.k === 'spec' || c.k === 'memo' || c.k === 'invNo') {
         val = `<span style="color:var(--text2)">${val}</span>`;
       }
@@ -1796,14 +1800,32 @@ window.savePurchase=async function(){
   alert('✅ 매입이 저장되었습니다!');
 };
 function renderPurchase(){
-  renderDynamicTable('purchase', cache.purchases, 'purchase-tbody', (r) => {
+  const q=(document.getElementById('purchase-q')?.value||'').toLowerCase();
+  const fc=document.getElementById('purchase-cur-f')?.value||'';
+  const rows=cache.purchases.filter(r=>(!q||(r.vendor||'').toLowerCase().includes(q)||(r.item||'').toLowerCase().includes(q))&&(!fc||r.currency===fc));
+
+  renderDynamicTable('purchase', rows, 'purchase-tbody', (r) => {
     return `<button class="btn btn-sm btn-edit" onclick="openEdit('purchases','${r.id}')">수정</button>
             <button class="btn btn-sm btn-danger" onclick="delPurch('${r.id}')">삭제</button>`;
   });
+  const kt=rows.filter(r=>r.currency==='KRW').reduce((s,r)=>s+(r.total||0),0);
+  document.getElementById('purchase-sum').textContent=rows.length?`KRW 합계: ${fmt(kt,'KRW')} (전체 ${rows.length}건)`:'';
   // 모바일 카드
-  renderMobileCards('purchase',cache.purchases,mPurchaseCard);
+  renderMobileCards('purchase',rows,mPurchaseCard);
 }
 window.delPurch=async function(id){if(confirm('삭제하시겠습니까?'))await delFromCol('purchases',id);};
+
+// 매출/매입 내역 표에서 거래처명을 클릭하면 그 거래처 내역만 걸러서 보여줌
+window.filterByParty=function(tableId,el){
+  const name=el.textContent;
+  const inputId = tableId==='sales' ? 'sales-q' : (tableId==='purchase' ? 'purchase-q' : null);
+  if(!inputId) return;
+  const input=document.getElementById(inputId);
+  if(!input) return;
+  input.value=name;
+  if(tableId==='sales') renderSales(); else renderPurchase();
+  input.scrollIntoView({behavior:'smooth',block:'center'});
+};
 
 // ══════════════════════════════════════════
 // ⚡ 빠른 입력 (한 줄로 매입+매출 동시 등록)
@@ -3484,7 +3506,7 @@ function mSalesCard(r,i){
   return `<div class="m-card">
     <div class="m-card-top">
       <div>
-        <div class="m-card-name">${escapeHtml(r.buyer||r.customer||'—')}</div>
+        <div class="m-card-name party-link" onclick="filterByParty('sales', this)" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px">${escapeHtml(r.buyer||r.customer||'—')}</div>
         <div class="m-card-sub">${escapeHtml(r.date||'')} · ${escapeHtml(r.item||r.summary||'')}</div>
       </div>
       <div style="text-align:right">
@@ -3510,7 +3532,7 @@ function mPurchaseCard(r,i){
   return `<div class="m-card">
     <div class="m-card-top">
       <div>
-        <div class="m-card-name">${escapeHtml(r.vendor||'—')}</div>
+        <div class="m-card-name party-link" onclick="filterByParty('purchase', this)" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px">${escapeHtml(r.vendor||'—')}</div>
         <div class="m-card-sub">${escapeHtml(r.date||'')} · ${escapeHtml(r.item||'')}</div>
       </div>
       <div style="text-align:right">
