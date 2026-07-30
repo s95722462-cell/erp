@@ -1799,6 +1799,149 @@ function renderPurchase(){
 }
 window.delPurch=async function(id){if(confirm('삭제하시겠습니까?'))await delFromCol('purchases',id);};
 
+// ══════════════════════════════════════════
+// ⚡ 빠른 입력 (한 줄로 매입+매출 동시 등록)
+// 어순에 의존하지 않고, 이미 등록된 거래처/품목명과 매칭해서 인식합니다.
+// ══════════════════════════════════════════
+const QUICK_BUY_KEYWORDS=['매입단가','매입가','입고단가','입고'];
+const QUICK_SELL_KEYWORDS=['판매단가','매출단가','출고단가','매출','판매'];
+let quickEntryDraft=null;
+
+function qeFindKeywordPositions(text,keywords){
+  const found=[];
+  keywords.forEach(kw=>{
+    let idx=text.indexOf(kw);
+    while(idx!==-1){ found.push({kw,idx,end:idx+kw.length}); idx=text.indexOf(kw,idx+kw.length); }
+  });
+  return found;
+}
+function qeExtractNumberNear(text,fromIdx){
+  const rest=text.slice(fromIdx,fromIdx+30); // 키워드 바로 뒤 30자 이내에서만 탐색
+  const m=rest.match(/(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*원?/);
+  if(!m) return null;
+  return {value:rawNum(m[1]), idx:fromIdx+m.index};
+}
+function qeFindNearestCustomer(text,keywordIdx,customers,excludeName){
+  let best=null,bestDist=Infinity;
+  (customers||[]).forEach(c=>{
+    if(!c.name || c.name===excludeName) return;
+    let idx=text.indexOf(c.name);
+    while(idx!==-1){
+      const dist=Math.abs(idx-keywordIdx);
+      if(dist<bestDist){bestDist=dist;best=c;}
+      idx=text.indexOf(c.name,idx+c.name.length);
+    }
+  });
+  return best;
+}
+function parseQuickEntryText(text){
+  const missing=[];
+  const qtyMatch=text.match(/(\d+(?:\.\d+)?)\s*(개|EA|ea|대)\b/);
+  const qty=qtyMatch?parseFloat(qtyMatch[1]):null;
+  if(!qty) missing.push('수량 (예: 2개, 2EA, 2대)');
+
+  let product=null,productMatchLen=0;
+  (cache.products||[]).forEach(p=>{
+    if(p.name && text.includes(p.name) && p.name.length>productMatchLen){ product=p; productMatchLen=p.name.length; }
+  });
+  if(!product) missing.push('등록된 품목명과 일치하는 품목');
+
+  const buyKwPositions=qeFindKeywordPositions(text,QUICK_BUY_KEYWORDS);
+  let buyPrice=null,buyKwIdx=null;
+  for(const pos of buyKwPositions){
+    const num=qeExtractNumberNear(text,pos.end);
+    if(num){ buyPrice=num.value; buyKwIdx=pos.idx; break; }
+  }
+  if(buyPrice===null) missing.push('매입단가 (예: 매입단가 400,000원)');
+
+  const sellKwPositions=qeFindKeywordPositions(text,QUICK_SELL_KEYWORDS);
+  let sellPrice=null,sellKwIdx=null;
+  for(const pos of sellKwPositions){
+    const num=qeExtractNumberNear(text,pos.end);
+    if(num){ sellPrice=num.value; sellKwIdx=pos.idx; break; }
+  }
+  if(sellPrice===null) missing.push('판매단가 (예: 판매단가 540,000원)');
+
+  let buyCustomer=null,sellCustomer=null;
+  if(buyKwIdx!==null) buyCustomer=qeFindNearestCustomer(text,buyKwIdx,cache.customers);
+  if(sellKwIdx!==null) sellCustomer=qeFindNearestCustomer(text,sellKwIdx,cache.customers,buyCustomer?.name);
+  if(!buyCustomer) missing.push('등록된 매입 거래처');
+  if(!sellCustomer) missing.push('등록된 매출 거래처');
+
+  return {ok:missing.length===0, missing, qty, product, buyPrice, buyCustomer, sellPrice, sellCustomer};
+}
+
+window.parseQuickEntry=function(){
+  const text=document.getElementById('quick-entry-input').value.trim();
+  if(!text){alert('내용을 입력하세요');return;}
+  const r=parseQuickEntryText(text);
+  if(!r.ok){
+    alert('다음 항목을 인식하지 못했습니다:\n\n- '+r.missing.join('\n- ')+'\n\n품목명·거래처명은 등록된 것과 정확히 같아야 하고, 수량/단가 앞에는 정해진 키워드가 있어야 합니다.');
+    return;
+  }
+  quickEntryDraft=r;
+  const buySub=r.qty*r.buyPrice, buyVat=Math.round(buySub*.1), buyTotal=buySub+buyVat;
+  const sellSub=r.qty*r.sellPrice, sellVat=Math.round(sellSub*.1), sellTotal=sellSub+sellVat;
+  document.getElementById('quick-entry-body').innerHTML=`
+    <div style="font-size:13px;line-height:1.9">
+      <div><b>품목</b>: ${escapeHtml(r.product.name)}${r.product.spec?' ('+escapeHtml(r.product.spec)+')':''}</div>
+      <div><b>수량</b>: ${r.qty}</div>
+      <div style="margin-top:6px"><label><b>거래일자</b> <input type="date" id="qe-date" value="${new Date().toISOString().slice(0,10)}"></label></div>
+      <hr style="margin:10px 0;border-color:var(--border)">
+      <div style="color:var(--blue)"><b>매입</b> — ${escapeHtml(r.buyCustomer.name)} · 단가 <input id="qe-buy-price" type="text" value="${r.buyPrice}" style="width:110px" oninput="updateQuickEntryTotals()"> 원 · 합계 <span id="qe-buy-total" style="font-weight:700">${fmt(buyTotal,'KRW')}</span></div>
+      <div style="color:var(--red);margin-top:4px"><b>매출</b> — ${escapeHtml(r.sellCustomer.name)} · 단가 <input id="qe-sell-price" type="text" value="${r.sellPrice}" style="width:110px" oninput="updateQuickEntryTotals()"> 원 · 합계 <span id="qe-sell-total" style="font-weight:700">${fmt(sellTotal,'KRW')}</span></div>
+      <hr style="margin:10px 0;border-color:var(--border)">
+      <div><b>예상 손익</b>: <span id="qe-profit" style="font-weight:700;color:var(--green)">${fmt(sellTotal-buyTotal,'KRW')}</span></div>
+    </div>`;
+  document.getElementById('quick-entry-modal').style.display='flex';
+};
+
+window.updateQuickEntryTotals=function(){
+  if(!quickEntryDraft) return;
+  const buyPrice=rawNum(document.getElementById('qe-buy-price').value);
+  const sellPrice=rawNum(document.getElementById('qe-sell-price').value);
+  const qty=quickEntryDraft.qty;
+  const buyTotal=qty*buyPrice*1.1, sellTotal=qty*sellPrice*1.1;
+  document.getElementById('qe-buy-total').textContent=fmt(Math.round(buyTotal),'KRW');
+  document.getElementById('qe-sell-total').textContent=fmt(Math.round(sellTotal),'KRW');
+  document.getElementById('qe-profit').textContent=fmt(Math.round(sellTotal-buyTotal),'KRW');
+};
+
+window.confirmQuickEntry=async function(){
+  if(!quickEntryDraft) return;
+  const r=quickEntryDraft;
+  const buyPrice=rawNum(document.getElementById('qe-buy-price').value);
+  const sellPrice=rawNum(document.getElementById('qe-sell-price').value);
+  const date=document.getElementById('qe-date').value;
+  const qty=r.qty;
+  const linkId=genId();
+  const buySub=qty*buyPrice, buyVat=Math.round(buySub*.1);
+  const sellSub=qty*sellPrice, sellVat=Math.round(sellSub*.1);
+
+  try{
+    await addToCol('purchases',{
+      date, vendor:r.buyCustomer.name, customerId:r.buyCustomer.id,
+      productId:r.product.id||'', item:r.product.name, spec:r.product.spec||'',
+      qty, unitPrice:buyPrice, currency:'KRW',
+      subtotal:buySub, vat:buyVat, total:buySub+buyVat,
+      memo:'빠른입력', linkId
+    });
+    await addToCol('sales',{
+      date, buyer:r.sellCustomer.name, customer:r.sellCustomer.name, customerId:r.sellCustomer.id,
+      productId:r.product.id||'', item:r.product.name, spec:r.product.spec||'', summary:r.product.name,
+      qty, unitPrice:sellPrice, currency:'KRW',
+      subtotal:sellSub, vat:sellVat, total:sellSub+sellVat,
+      memo:'빠른입력', linkId
+    });
+    document.getElementById('quick-entry-input').value='';
+    quickEntryDraft=null;
+    closeModal('quick-entry-modal');
+    alert('✅ 매입/매출이 각각 등록되었습니다!');
+  }catch(e){
+    alert('저장 중 오류가 발생했습니다: '+e.message);
+  }
+};
+
 // ── 거래처 ──
 window.saveCustomer=async function(){
   const name=document.getElementById('c-name').value.trim();
