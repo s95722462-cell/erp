@@ -49,8 +49,14 @@
   </div>
 </div>
 
+<!-- ══ 최초 로딩(로그인 상태 확인 중) ══ -->
+<div id="boot-loading" style="position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:9999">
+  <div class="spinner"></div>
+  <div style="color:var(--text2);font-size:13px">불러오는 중...</div>
+</div>
+
 <!-- ══ 로그인 ══ -->
-<div class="login-wrap" id="login-screen">
+<div class="login-wrap" id="login-screen" style="display:none">
   <div class="login-box">
     <div class="login-logo"><h1>iERP</h1><p>INTELLIGENT ERP · made by 알프</p></div>
     <div class="tab-row">
@@ -886,6 +892,6 @@
 <button class="btn btn-primary fixed-save-btn" id="fixed-save-sale" onclick="saveErpData('sale')">💾 매출 내역 저장</button>
 <button class="btn btn-primary fixed-save-btn" id="fixed-save-buy" onclick="saveErpData('buy')">💾 매입 내역 저장</button>
 
-<script src="app.js?v=20260730_emailidx"></script>
+<script src="app.js?v=20260730_qevat"></script>
 </body>
 </html>

@@ -2,6 +2,7 @@
 let db;
 let auth;
 let manualLoginInProgress=false; // doLogin()/doRegister()이 진행 중일 때 onAuthStateChanged의 자동 복원 로직과 중복 실행되지 않도록 막는 플래그
+let authInitialCheckDone=false; // 페이지 로드 시 최초 로그인 상태 확인이 끝났는지 여부 (끝나기 전까지는 로딩 화면만 표시)
 let currentUser=null;
 let companies=[];
 let activeCoIdx=0;
@@ -432,7 +433,29 @@ function initApp(){
         console.error('자동 로그인 복원 실패:', e);
       }
     }
+    // 최초 1회(페이지 로드 시 인증 상태 확인)만 로딩 화면을 내림 — 그 이후의 로그인/로그아웃 전환은
+    // doLogin/doRegister/doLogout이 각자 화면 전환을 처리하므로 여기서 건드리지 않음
+    if (!authInitialCheckDone) {
+      authInitialCheckDone = true;
+      const boot = document.getElementById('boot-loading');
+      if (boot) boot.style.display = 'none';
+      if (!currentUser) {
+        document.getElementById('login-screen').style.display = 'flex';
+      }
+    }
   });
+
+  // 네트워크가 느려 인증 상태 확인 자체가 지연되는 경우를 대비한 안전장치
+  setTimeout(() => {
+    if (!authInitialCheckDone) {
+      authInitialCheckDone = true;
+      const boot = document.getElementById('boot-loading');
+      if (boot) boot.style.display = 'none';
+      if (!currentUser) {
+        document.getElementById('login-screen').style.display = 'flex';
+      }
+    }
+  }, 6000);
 }
 
 // ── 상태 ──
@@ -1971,8 +1994,10 @@ window.parseQuickEntry=function(){
       <div><b>수량</b>: ${r.qty}</div>
       <div style="margin-top:6px"><label><b>거래일자</b> <input type="date" id="qe-date" value="${new Date().toISOString().slice(0,10)}"></label></div>
       <hr style="margin:10px 0;border-color:var(--border)">
-      <div style="color:var(--blue)"><b>매입</b> — ${escapeHtml(r.buyCustomer.name)} · 단가 <input id="qe-buy-price" type="text" value="${r.buyPrice}" style="width:110px" oninput="updateQuickEntryTotals()"> 원 · 합계 <span id="qe-buy-total" style="font-weight:700">${fmt(buyTotal,'KRW')}</span></div>
-      <div style="color:var(--red);margin-top:4px"><b>매출</b> — ${escapeHtml(r.sellCustomer.name)} · 단가 <input id="qe-sell-price" type="text" value="${r.sellPrice}" style="width:110px" oninput="updateQuickEntryTotals()"> 원 · 합계 <span id="qe-sell-total" style="font-weight:700">${fmt(sellTotal,'KRW')}</span></div>
+      <div style="color:var(--blue)"><b>매입</b> — ${escapeHtml(r.buyCustomer.name)} · 단가 <input id="qe-buy-price" type="text" value="${r.buyPrice}" style="width:110px" oninput="updateQuickEntryTotals()"> 원</div>
+      <div style="margin:2px 0 0 16px;font-size:12px;color:var(--text2)">공급가액 <span id="qe-buy-sub">${fmt(buySub,'KRW')}</span> + 세액(10%) <span id="qe-buy-vat">${fmt(buyVat,'KRW')}</span> = <b id="qe-buy-total">${fmt(buyTotal,'KRW')}</b></div>
+      <div style="color:var(--red);margin-top:8px"><b>매출</b> — ${escapeHtml(r.sellCustomer.name)} · 단가 <input id="qe-sell-price" type="text" value="${r.sellPrice}" style="width:110px" oninput="updateQuickEntryTotals()"> 원</div>
+      <div style="margin:2px 0 0 16px;font-size:12px;color:var(--text2)">공급가액 <span id="qe-sell-sub">${fmt(sellSub,'KRW')}</span> + 세액(10%) <span id="qe-sell-vat">${fmt(sellVat,'KRW')}</span> = <b id="qe-sell-total">${fmt(sellTotal,'KRW')}</b></div>
       <hr style="margin:10px 0;border-color:var(--border)">
       <div><b>예상 손익</b>: <span id="qe-profit" style="font-weight:700;color:var(--green)">${fmt(sellTotal-buyTotal,'KRW')}</span></div>
     </div>`;
@@ -1984,10 +2009,15 @@ window.updateQuickEntryTotals=function(){
   const buyPrice=rawNum(document.getElementById('qe-buy-price').value);
   const sellPrice=rawNum(document.getElementById('qe-sell-price').value);
   const qty=quickEntryDraft.qty;
-  const buyTotal=qty*buyPrice*1.1, sellTotal=qty*sellPrice*1.1;
-  document.getElementById('qe-buy-total').textContent=fmt(Math.round(buyTotal),'KRW');
-  document.getElementById('qe-sell-total').textContent=fmt(Math.round(sellTotal),'KRW');
-  document.getElementById('qe-profit').textContent=fmt(Math.round(sellTotal-buyTotal),'KRW');
+  const buySub=qty*buyPrice, buyVat=Math.round(buySub*.1), buyTotal=buySub+buyVat;
+  const sellSub=qty*sellPrice, sellVat=Math.round(sellSub*.1), sellTotal=sellSub+sellVat;
+  document.getElementById('qe-buy-sub').textContent=fmt(buySub,'KRW');
+  document.getElementById('qe-buy-vat').textContent=fmt(buyVat,'KRW');
+  document.getElementById('qe-buy-total').textContent=fmt(buyTotal,'KRW');
+  document.getElementById('qe-sell-sub').textContent=fmt(sellSub,'KRW');
+  document.getElementById('qe-sell-vat').textContent=fmt(sellVat,'KRW');
+  document.getElementById('qe-sell-total').textContent=fmt(sellTotal,'KRW');
+  document.getElementById('qe-profit').textContent=fmt(sellTotal-buyTotal,'KRW');
 };
 
 window.confirmQuickEntry=async function(){
@@ -2170,13 +2200,15 @@ window.submitEdit=async function(){
     if(el) updates[f.k]=f.t==='number'?rawNum(el.value):el.value;
   });
   if(editState.col==='sales'&&updates.qty&&updates.unitPrice){
+    const cur=editState.data.currency; // 수정 화면엔 통화 입력칸이 없으므로, 원래 저장된 통화를 그대로 사용
     updates.subtotal=updates.qty*updates.unitPrice;
-    updates.vat=updates.currency==='KRW'?Math.round(updates.subtotal*.1):0;
+    updates.vat=cur==='KRW'?Math.round(updates.subtotal*.1):0;
     updates.total=updates.subtotal+updates.vat;
   }
   if(editState.col==='purchases'&&updates.qty&&updates.unitPrice){
+    const cur=editState.data.currency;
     updates.subtotal=updates.qty*updates.unitPrice;
-    updates.vat=updates.currency==='KRW'?Math.round(updates.subtotal*.1):0;
+    updates.vat=cur==='KRW'?Math.round(updates.subtotal*.1):0;
     updates.total=updates.subtotal+updates.vat;
   }
   await updFromCol(editState.col,editState.id,updates);
