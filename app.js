@@ -1844,7 +1844,13 @@ function parseQuickEntryText(text){
   (cache.products||[]).forEach(p=>{
     if(p.name && text.includes(p.name) && p.name.length>productMatchLen){ product=p; productMatchLen=p.name.length; }
   });
-  if(!product) missing.push('등록된 품목명과 일치하는 품목');
+  let productUnregistered=false;
+  if(!product && qtyMatch){
+    // 등록된 품목이 아니면, 수량 표기 앞부분을 품목명으로 간주 (수동입력 폼에서 품목명을 자유 텍스트로 쓰는 것과 동일한 방식)
+    const guess=text.slice(0,qtyMatch.index).trim();
+    if(guess) { product={name:guess,spec:'',id:''}; productUnregistered=true; }
+  }
+  if(!product) missing.push('품목명 (수량 앞에 품목명을 적어주세요)');
 
   const buyKwPositions=qeFindKeywordPositions(text,QUICK_BUY_KEYWORDS);
   let buyPrice=null,buyKwIdx=null;
@@ -1868,7 +1874,7 @@ function parseQuickEntryText(text){
   if(!buyCustomer) missing.push('등록된 매입 거래처');
   if(!sellCustomer) missing.push('등록된 매출 거래처');
 
-  return {ok:missing.length===0, missing, qty, product, buyPrice, buyCustomer, sellPrice, sellCustomer};
+  return {ok:missing.length===0, missing, qty, product, productUnregistered, buyPrice, buyCustomer, sellPrice, sellCustomer};
 }
 
 window.parseQuickEntry=function(){
@@ -1884,7 +1890,7 @@ window.parseQuickEntry=function(){
   const sellSub=r.qty*r.sellPrice, sellVat=Math.round(sellSub*.1), sellTotal=sellSub+sellVat;
   document.getElementById('quick-entry-body').innerHTML=`
     <div style="font-size:13px;line-height:1.9">
-      <div><b>품목</b>: ${escapeHtml(r.product.name)}${r.product.spec?' ('+escapeHtml(r.product.spec)+')':''}</div>
+      <div><b>품목</b>: ${escapeHtml(r.product.name)}${r.product.spec?' ('+escapeHtml(r.product.spec)+')':''}${r.productUnregistered?' <span style="color:var(--amber);font-size:11px">(미등록 품목 — 텍스트로만 저장됩니다)</span>':''}</div>
       <div><b>수량</b>: ${r.qty}</div>
       <div style="margin-top:6px"><label><b>거래일자</b> <input type="date" id="qe-date" value="${new Date().toISOString().slice(0,10)}"></label></div>
       <hr style="margin:10px 0;border-color:var(--border)">
