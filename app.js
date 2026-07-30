@@ -1845,12 +1845,27 @@ function parseQuickEntryText(text){
     if(p.name && text.includes(p.name) && p.name.length>productMatchLen){ product=p; productMatchLen=p.name.length; }
   });
   let productUnregistered=false;
+  const modelCodePattern=/^[A-Za-z]+[A-Za-z0-9]*(?:-[A-Za-z0-9]+)+$/; // 예: MR-J4-40B, MR-J4W2-22B 같은 영문+숫자+하이픈 모델번호
   if(!product && qtyMatch){
-    // 등록된 품목이 아니면, 수량 표기 앞부분을 품목명으로 간주 (수동입력 폼에서 품목명을 자유 텍스트로 쓰는 것과 동일한 방식)
+    // 등록된 품목이 아니면, 수량 표기 앞부분을 살펴봄
     const guess=text.slice(0,qtyMatch.index).trim();
-    if(guess) { product={name:guess,spec:'',id:''}; productUnregistered=true; }
+    if(guess){
+      const words=guess.split(/\s+/);
+      const lastWord=words[words.length-1]||'';
+      if(modelCodePattern.test(lastWord)){
+        // 마지막 단어가 모델번호처럼 생겼으면 → 규격으로, 그 앞쪽 텍스트를 품목명으로 분리
+        const itemName=words.slice(0,-1).join(' ').trim();
+        if(itemName){
+          product={name:itemName, spec:lastWord, id:''}; productUnregistered=true;
+        }
+        // itemName이 없으면(모델번호만 딸랑 있으면) product는 null로 남겨서 "품목명 필요" 안내가 뜨게 함
+      } else {
+        // 모델번호 패턴이 아니면 통째로 품목명으로 (지금까지 방식)
+        product={name:guess,spec:'',id:''}; productUnregistered=true;
+      }
+    }
   }
-  if(!product) missing.push('품목명 (수량 앞에 품목명을 적어주세요)');
+  if(!product) missing.push('품목명 (예: "SERVO AMP MR-J4-40B 2EA..."처럼 품목명 뒤에 모델번호를 붙여 적어주세요)');
 
   const buyKwPositions=qeFindKeywordPositions(text,QUICK_BUY_KEYWORDS);
   let buyPrice=null,buyKwIdx=null;
