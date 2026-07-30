@@ -660,6 +660,17 @@ function afterLogin(){
   loadSealForActiveCo();
   initMobileUI(); // 모바일 UI 설정 초기화
   startListeners();
+
+  // 드물게 로그인 직후 최초 연결이 지연되는 경우가 있어(원인 불명확),
+  // 몇 초 뒤에도 계속 "연결 중..."이면 회사를 재선택한 것과 동일하게 리스너를 자동으로 다시 연결 시도
+  [4000, 8000, 12000].forEach(delay=>{
+    setTimeout(()=>{
+      const lbl=document.getElementById('sync-label');
+      if(lbl && lbl.textContent==='연결 중...' && currentUser){
+        startListeners();
+      }
+    }, delay);
+  });
 }
 
 // ── 회사 전환 ──
