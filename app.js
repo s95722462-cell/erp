@@ -403,11 +403,26 @@ function initApp(){
     if (manualLoginInProgress) return; // doLogin()이 직접 처리 중이면 중복 실행 방지
     if (user && !currentUser) {
       try {
-        const safeId = (user.email || '').split('@')[0];
+        const emailLower = (user.email || '').toLowerCase();
+        if (!emailLower) return;
+        // Firebase가 이메일을 소문자로 저장하므로, 원래(대소문자가 섞인) 안전문자열은
+        // 로그인할 때마다 저장해둔 색인(emailIndex)에서 찾아야 정확합니다.
+        let safeId;
+        const idxSnap = await db.collection('emailIndex').doc(emailLower).get();
+        if (idxSnap.exists) {
+          safeId = idxSnap.data().safeId;
+        } else {
+          // 색인이 아직 없는 경우(이 코드 배포 전에 로그인한 세션) - 이메일 앞부분을 그대로 시도 (소문자 전용 아이디만 해당)
+          safeId = emailLower.split('@')[0];
+        }
         if (!safeId) return;
         const snap = await db.collection('users').doc(safeId).get();
         if (!snap.exists) { await auth.signOut(); return; }
         const data = snap.data();
+        // 색인이 없어서 방금 새로 만든 경우를 대비해 갱신(다음 새로고침부터는 색인으로 바로 찾음)
+        if (!idxSnap.exists) {
+          db.collection('emailIndex').doc(emailLower).set({ safeId }).catch(() => {});
+        }
         currentUser = { id: data.displayId || safeId, safeId, ...data };
         companies = data.companies || [{ company: data.company || '', bizno: data.bizno || '', ceo: data.ceo || '', biztype: data.biztype || '', bizitem: data.bizitem || '', tel: data.tel || '', fax: data.fax || '', email: data.email || '', addr: data.addr || '', bank: data.bank || '', account: data.account || '', accountname: data.accountname || '', terms: data.terms || '', footer: data.footer || '' }];
         activeCoIdx = data.activeCoIdx || 0;
@@ -557,6 +572,11 @@ window.doLogin=async function(){
     if(!snap.exists){err.textContent='아이디가 존재하지 않습니다';return;}
     const data=snap.data();
 
+    // 새로고침 시 자동 로그인 복원을 위한 색인 갱신 (Firebase가 이메일을 소문자로 바꿔버리기 때문에,
+    // 복원 시점엔 "소문자 이메일 → 원래 대소문자가 섞인 안전문자열"을 이 색인에서 찾아야 함)
+    try{ await db.collection('emailIndex').doc(email.toLowerCase()).set({safeId}); }
+    catch(idxErr){ console.error('이메일 색인 저장 실패:', idxErr); }
+
     if(!signedIn){
       if(!data.pw){
         // 이미 전환된 계정인데 로그인에 실패한 경우 → 비밀번호가 틀린 것
@@ -630,6 +650,9 @@ window.doRegister=async function(){
     // 비밀번호는 Firebase Authentication이 관리하므로 Firestore 문서에는 저장하지 않음
     const ud={displayId:id,companies:[co],activeCoIdx:0,createdAt:new Date().toISOString()};
     await db.collection('users').doc(safeId).set(ud);
+    // 새로고침 시 자동 로그인 복원을 위한 색인 저장
+    try{ await db.collection('emailIndex').doc(email.toLowerCase()).set({safeId}); }
+    catch(idxErr){ console.error('이메일 색인 저장 실패:', idxErr); }
     currentUser={id,safeId,...ud};
     companies=[co];activeCoIdx=0;
     afterLogin();
