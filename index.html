@@ -11,7 +11,7 @@
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<link rel="stylesheet" href="style.css?v=20260730_tag">
+<link rel="stylesheet" href="style.css?v=20260730_cotabs">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 </head>
 <body>
@@ -116,9 +116,7 @@
   <div class="topbar">
     <div class="topbar-logo">iERP<span style="font-size:10px; color:#ffeb3b; margin-left:5px">v2026.06.09.1100</span></div>
 
-    <div class="company-switcher">
-      <select class="company-sel" id="active-company-sel" onchange="switchCompany(this.value)" title="사용 중인 회사 전환"><option value="">불러오는 중...</option></select>
-    </div>
+    <div class="company-switcher" id="active-company-tabs"></div>
     <div class="topbar-right">
       <button class="btn btn-sm" onclick="openGlobalSearch()" style="background:rgba(255,255,255,0.1);color:#fff;border-color:rgba(255,255,255,0.2)">🔍 검색 (Ctrl+K)</button>
       <button class="btn btn-sm" onclick="toggleDarkMode()" style="background:rgba(255,255,255,0.1);color:#fff;border-color:rgba(255,255,255,0.2)">🌓 테마</button>
@@ -867,6 +865,6 @@
 <button class="btn btn-primary fixed-save-btn" id="fixed-save-sale" onclick="saveErpData('sale')">💾 매출 내역 저장</button>
 <button class="btn btn-primary fixed-save-btn" id="fixed-save-buy" onclick="saveErpData('buy')">💾 매입 내역 저장</button>
 
-<script src="app.js?v=20260730_removeqe"></script>
+<script src="app.js?v=20260730_cotabs"></script>
 </body>
 </html>

@@ -49,9 +49,10 @@ body{font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:var(
 .app{display:flex;flex-direction:column;min-height:100vh}
 .topbar{flex-shrink:0;display:flex;align-items:center;gap:10px;padding:0 20px;height:50px;background:var(--accent);color:var(--accent-fg);position:sticky;top:0;z-index:100;flex-wrap:wrap}
 .topbar-logo{font-size:18px;font-weight:800;letter-spacing:-0.5px}
-.company-switcher{display:flex;align-items:center;gap:6px;margin-left:8px}
-.company-sel{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:3px 10px;font-size:12px;font-family:inherit;cursor:pointer;max-width:160px}
-.company-sel option{background:#1a1917;color:#fff}
+.company-switcher{display:flex;align-items:center;gap:4px;margin-left:8px;flex-wrap:wrap}
+.co-tab{background:rgba(255,255,255,.08);color:rgba(255,255,255,.75);border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:4px 12px;font-size:12px;font-family:inherit;cursor:pointer;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:background .15s,color .15s}
+.co-tab:hover{background:rgba(255,255,255,.16);color:#fff}
+.co-tab.active{background:#fff;color:#1a1917;border-color:#fff;font-weight:700}
 .sync-wrap{display:flex;align-items:center;gap:6px;font-size:11px;opacity:.6}
 .sync-dot{width:6px;height:6px;border-radius:50%;background:#4ade80;flex-shrink:0}
 .sync-dot.off{background:#f87171}
@@ -418,7 +419,7 @@ th:not(.no-col){text-transform:uppercase}
   .bottom-nav{display:flex!important}
   .topbar{height:46px;padding:0 12px}
   .topbar-logo{font-size:15px}
-  .company-sel{max-width:110px;font-size:11px;padding:2px 6px}
+  .co-tab{max-width:90px;font-size:11px;padding:3px 8px}
   .user-badge{display:none}
   .logout-btn{font-size:11px;padding:3px 8px}
   .content{padding:60px 10px 80px!important}

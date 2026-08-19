@@ -721,8 +721,11 @@ function afterLogin(){
 
 // ── 회사 전환 ──
 function updateCompanySwitcher(){
-  const sel=document.getElementById('active-company-sel');
-  sel.innerHTML=companies.map((c,i)=>`<option value="${i}"${i===activeCoIdx?' selected':''}>${escapeHtml(c.company||'회사'+(i+1))}</option>`).join('');
+  const wrap=document.getElementById('active-company-tabs');
+  if(!wrap) return;
+  wrap.innerHTML=companies.map((c,i)=>
+    `<button type="button" class="co-tab${i===activeCoIdx?' active':''}" onclick="switchCompany(${i})" title="${escapeHtml(c.company||'회사'+(i+1))}">${escapeHtml(c.company||'회사'+(i+1))}</button>`
+  ).join('');
 }
 window.switchCompany=function(idx){
   activeCoIdx=parseInt(idx);
