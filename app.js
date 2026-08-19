@@ -1264,9 +1264,15 @@ window.removeErpRow = function(type, btn) {
 };
 
 window.fillErpProduct = function(input, type) {
-  const name = input.value;
-  // 1. 제품 기본 정보 찾기
-  const p = cache.products.find(x => x.name === name);
+  const raw = input.value;
+  // 자동완성에서 "품목명 (규격)" 형태로 표시된 걸 그대로 선택했을 수 있으므로 분리 시도
+  let name = raw, specHint = '';
+  const m = raw.match(/^(.*)\s\(([^()]*)\)$/);
+  if (m) { name = m[1]; specHint = m[2]; }
+
+  // 1. 제품 기본 정보 찾기 (이름+규격 힌트가 둘 다 맞는 것을 우선, 없으면 이름만으로)
+  let p = cache.products.find(x => x.name === name && (!specHint || (x.spec || '') === specHint));
+  if (!p) p = cache.products.find(x => x.name === name);
   
   // 2. 매출/매입 내역에서 가장 최근 단가 찾기
   let lastPrice = p ? p.price : 0;
@@ -1274,7 +1280,7 @@ window.fillErpProduct = function(input, type) {
   // 최근 내역 검색 (매출이면 매출 내역, 매입이면 매입 내역에서 검색)
   const history = type === 'sale' ? cache.sales : cache.purchases;
   const itemHistory = history
-    .filter(r => r.item === name)
+    .filter(r => r.item === (p ? p.name : name))
     .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
     
   if (itemHistory.length > 0) {
@@ -1283,6 +1289,7 @@ window.fillErpProduct = function(input, type) {
 
   const tr = input.closest('tr');
   if (p) {
+    // 자동완성에 표시됐던 "이름 (규격)" 결합 문자열이 아니라, 품목명/규격을 각 칸에 정확히 분리해서 채움
     tr.querySelector('.erp-item-name').value = p.name;
     tr.querySelector('.erp-spec').value = p.spec || '';
   }
