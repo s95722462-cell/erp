@@ -1195,8 +1195,8 @@ window.addErpRow = function(type, data = {}) {
   const tr = document.createElement('tr');
   tr.innerHTML = `
     <td class="row-no">${rowCount + 1}</td>
-    <td><input list="products-list" class="erp-item-name" placeholder="품목명" onchange="fillErpProduct(this, '${type}')" value="${data.item || ''}"></td>
-    <td><input class="erp-spec" placeholder="규격" value="${data.spec || ''}"></td>
+    <td><input list="products-list" class="erp-item-name" placeholder="품목명" onchange="fillErpProduct(this, '${type}')" value="${escapeHtml(data.item || '')}"></td>
+    <td><input class="erp-spec" placeholder="규격" value="${escapeHtml(data.spec || '')}"></td>
     <td><input type="number" class="erp-qty" value="${data.qty || ''}" oninput="calcErpRow('${type}', this)"></td>
     <td><input type="text" class="erp-price" placeholder="0" value="${(data.unitPrice > 0 ? data.unitPrice.toLocaleString() : '')}" oninput="fmtInput(this);calcErpRow('${type}', this)"></td>
     <td><input type="text" class="erp-subtotal" readonly value="${(data.subtotal > 0 ? data.subtotal.toLocaleString() : '')}"></td>
@@ -1454,21 +1454,21 @@ function buildInvoiceHTML(items, cur, extraData){
       <div style="text-align:center;font-size:14px;font-weight:700;letter-spacing:2px;margin-bottom:2px">거 래 명 세 서</div>
       <div style="text-align:center;font-size:9px;color:#333;margin-bottom:5px;padding-bottom:3px;border-bottom:1.5px solid #000">${label}</div>
       <div style="display:flex;justify-content:flex-end;gap:12px;font-size:8.5px;margin-bottom:4px">
-        <span><b>No.</b> ${no}</span>
-        <span><b>발행일</b> ${date}</span>
-        ${terms?`<span><b>결제조건</b> ${terms}</span>`:''}
+        <span><b>No.</b> ${escapeHtml(no)}</span>
+        <span><b>발행일</b> ${escapeHtml(date)}</span>
+        ${terms?`<span><b>결제조건</b> ${escapeHtml(terms)}</span>`:''}
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:5px">
         <div style="border:1px solid #333;border-radius:2px;overflow:hidden">
           <div style="background:#e0e0e0;border-bottom:1px solid #333;padding:2px 6px;font-size:8.5px;font-weight:700;text-align:center;letter-spacing:1px">공 급 받 는 자</div>
           <div style="padding:3px 5px">
-            ${[['상호',buyerName],['사업자번호',buyer.bizno||'—'],['대표자',buyer.ceo||'—'],['주소',buyer.addr||'—'],['전화',buyer.tel||'—'],['담당자',manager||'—']].map(([l,v])=>`<div style="display:flex;font-size:8.5px;padding:1px 0;border-bottom:1px solid #eee"><span style="width:50px;color:#555;flex-shrink:0;font-weight:600">${l}</span><span style="word-break:break-all">${v}</span></div>`).join('')}
+            ${[['상호',buyerName],['사업자번호',buyer.bizno||'—'],['대표자',buyer.ceo||'—'],['주소',buyer.addr||'—'],['전화',buyer.tel||'—'],['담당자',manager||'—']].map(([l,v])=>`<div style="display:flex;font-size:8.5px;padding:1px 0;border-bottom:1px solid #eee"><span style="width:50px;color:#555;flex-shrink:0;font-weight:600">${l}</span><span style="word-break:break-all">${escapeHtml(v)}</span></div>`).join('')}
           </div>
         </div>
         <div style="border:1px solid #333;border-radius:2px;overflow:hidden">
           <div style="background:#e0e0e0;border-bottom:1px solid #333;padding:2px 6px;font-size:8.5px;font-weight:700;text-align:center;letter-spacing:1px">공 급 자</div>
           <div style="padding:3px 5px;position:relative">
-            ${[['상호',co.company||'—'],['사업자번호',co.bizno||'—'],['대표자',co.ceo||'—'],['업태/종목',(co.biztype||'')+(co.bizitem?' / '+co.bizitem:'')],['주소',co.addr||'—'],['전화',co.tel||'—']].map(([l,v])=>`<div style="display:flex;font-size:8.5px;padding:1px 0;border-bottom:1px solid #eee"><span style="width:50px;color:#555;flex-shrink:0;font-weight:600">${l}</span><span style="word-break:break-all">${v}</span></div>`).join('')}
+            ${[['상호',co.company||'—'],['사업자번호',co.bizno||'—'],['대표자',co.ceo||'—'],['업태/종목',(co.biztype||'')+(co.bizitem?' / '+co.bizitem:'')],['주소',co.addr||'—'],['전화',co.tel||'—']].map(([l,v])=>`<div style="display:flex;font-size:8.5px;padding:1px 0;border-bottom:1px solid #eee"><span style="width:50px;color:#555;flex-shrink:0;font-weight:600">${l}</span><span style="word-break:break-all">${escapeHtml(v)}</span></div>`).join('')}
             ${sealImageBase64?`<img src="${sealImageBase64}" alt="직인" style="position:absolute;bottom:4px;right:4px;width:64px;height:64px;object-fit:contain;opacity:0.85">`:'<div style="position:absolute;bottom:4px;right:4px;width:52px;height:52px;border:1px solid #333;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#333">(인)</div>'}
           </div>
         </div>
@@ -1500,8 +1500,8 @@ function buildInvoiceHTML(items, cur, extraData){
             const rowTotal=it.amount+rowVat;
             return `<tr style="height:20px">
               <td style="border:1px solid #333;padding:2px;text-align:center;font-size:8px">${i+1}</td>
-              <td style="border:1px solid #333;padding:2px 5px;word-break:break-all">${it.name}</td>
-              <td style="border:1px solid #333;padding:2px 4px;text-align:center;color:#333">${it.spec||''}</td>
+              <td style="border:1px solid #333;padding:2px 5px;word-break:break-all">${escapeHtml(it.name)}</td>
+              <td style="border:1px solid #333;padding:2px 4px;text-align:center;color:#333">${escapeHtml(it.spec||'')}</td>
               <td style="border:1px solid #333;padding:2px;text-align:center">${Number(it.qty).toLocaleString()}</td>
               <td style="border:1px solid #333;padding:2px 4px;text-align:right">${Number(it.unitPrice).toLocaleString()}</td>
               <td style="border:1px solid #333;padding:2px 4px;text-align:right">${Number(it.amount).toLocaleString()}</td>
@@ -1528,11 +1528,11 @@ function buildInvoiceHTML(items, cur, extraData){
       </div>
       <div style="display:flex;justify-content:space-between;align-items:flex-end">
         <div style="flex:1">
-          ${note?`<div style="font-size:8px;color:#555;margin-top:2px">비고: ${note}</div>`:''}
-          <div style="font-size:8px;color:#666;margin-top:1px">${footer}</div>
+          ${note?`<div style="font-size:8px;color:#555;margin-top:2px">비고: ${escapeHtml(note)}</div>`:''}
+          <div style="font-size:8px;color:#666;margin-top:1px">${escapeHtml(footer)}</div>
         </div>
         <div style="width:120px;text-align:right;font-size:10px;font-weight:700;padding-bottom:2px">
-          인수자: ${receiver||'__________'} (인)
+          인수자: ${escapeHtml(receiver||'__________')} (인)
         </div>
       </div>
     </div>`;
@@ -1575,7 +1575,7 @@ window.setCur=function(c,s,btn){
 };
 window.addItem=function(){
   const id='item'+Date.now();itemRows.push(id);
-  const opts=cache.products.map(p=>`<option value="${p.name}" data-id="${p.id}" data-price="${rawNum(p.price)}" data-spec="${p.spec||''}">${p.code?p.code+' | ':''}${p.name}${p.spec?' ('+p.spec+')':''}</option>`).join('');
+  const opts=cache.products.map(p=>`<option value="${escapeHtml(p.name)}" data-id="${p.id}" data-price="${rawNum(p.price)}" data-spec="${escapeHtml(p.spec||'')}">${p.code?escapeHtml(p.code)+' | ':''}${escapeHtml(p.name)}${p.spec?' ('+escapeHtml(p.spec)+')':''}</option>`).join('');
   const div=document.createElement('div');div.id=id;
   div.style.cssText='display:grid;grid-template-columns:1.6fr 1fr 60px 100px 100px 34px;gap:6px;align-items:center;margin-bottom:6px';
   div.innerHTML=`
@@ -2733,143 +2733,6 @@ window.downloadPdf = async function() {
   } catch (err) {
     console.error(err);
     alert('❌ PDF 생성 중 오류가 발생했습니다.');
-  } finally {
-    document.body.removeChild(loading);
-  }
-};
-
-// ── 샘플 데이터 생성 (Tester Tool) ──
-
-window.generateSampleData = async function() {
-  if (!confirm('테스트용 샘플 데이터를 생성하시겠습니까?\n기존 데이터와 섞여서 생성되며, 6개월치 거래 내역이 추가됩니다.')) return;
-
-  const loading = document.createElement('div');
-  loading.style = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;text-align:center';
-  loading.innerHTML = '샘플 데이터 생성 중...<br>잠시만 기다려 주세요.';
-  document.body.appendChild(loading);
-
-  try {
-    // 1. 샘플 거래처
-    const sampleCusts = [
-      { name: '(주)테크솔루션', contact: '김철수 팀장', bizno: '123-45-67890', addr: '서울시 강남구 테헤란로 123', isSample: true },
-      { name: '대성자동화', contact: '이영희 대표', bizno: '234-56-78901', addr: '경기도 안산시 단원구 산업로 45', isSample: true },
-      { name: '글로벌파츠', contact: '박민준 과장', bizno: '345-67-89012', addr: '인천시 남동구 남동대로 78', isSample: true }
-    ];
-    const custIds = [];
-    for (const c of sampleCusts) {
-      const doc = await addToCol('customers', c);
-      custIds.push({ id: doc.id, name: c.name });
-    }
-
-    // 2. 샘플 품목
-    const sampleProds = [
-      { name: '서보 모터 S-200', code: 'SM-200', spec: '200W, 3000rpm', price: 450000, currency: 'KRW', unit: 'EA', isSample: true },
-      { name: '센서 모듈 M18', code: 'SN-M18', spec: '근접센서 NPN', price: 35000, currency: 'KRW', unit: 'EA', isSample: true },
-      { name: '리니어 가이드 15', code: 'LG-15', spec: 'L=1000mm', price: 120000, currency: 'KRW', unit: 'EA', isSample: true }
-    ];
-    const prodIds = [];
-    for (const p of sampleProds) {
-      const doc = await addToCol('products', p);
-      prodIds.push({ id: doc.id, ...p });
-    }
-
-    // 3. 6개월치 거래 (매출/매입 약 40건)
-    const now = new Date();
-    for (let i = 0; i < 40; i++) {
-      const isSale = Math.random() > 0.4;
-      const d = new Date();
-      d.setDate(now.getDate() - Math.floor(Math.random() * 180)); // 최근 180일
-      const dateStr = d.toISOString().slice(0, 10);
-      
-      const cust = custIds[Math.floor(Math.random() * custIds.length)];
-      const prod = prodIds[Math.floor(Math.random() * prodIds.length)];
-      const qty = Math.floor(Math.random() * 10) + 1;
-      const subtotal = qty * prod.price;
-      const vat = isSale ? Math.round(subtotal * 0.1) : 0;
-      const total = subtotal + vat;
-
-      if (isSale) {
-        await addToCol('sales', {
-          date: dateStr,
-          buyer: cust.name,
-          customer: cust.name,
-          customerId: cust.id,
-          productId: prod.id,
-          item: prod.name,
-          spec: prod.spec,
-          qty,
-          unitPrice: prod.price,
-          currency: 'KRW',
-          subtotal,
-          vat,
-          total,
-          invNo: `INV-TEST-${1000 + i}`,
-          memo: '샘플 데이터',
-          isSample: true
-        });
-      } else {
-        await addToCol('purchases', {
-          date: dateStr,
-          vendor: cust.name, // 편의상 같은 거래처 사용
-          item: prod.name,
-          spec: prod.spec,
-          qty,
-          unitPrice: prod.price * 0.8, // 매입가는 80%
-          currency: 'KRW',
-          subtotal: qty * prod.price * 0.8,
-          vat: 0,
-          total: qty * prod.price * 0.8,
-          invNo: `PUR-${2000 + i}`,
-          memo: '샘플 매입',
-          isSample: true
-        });
-      }
-    }
-
-    alert('✅ 샘플 데이터 생성이 완료되었습니다!\n이제 대시보드와 장부에서 풍성한 데이터를 확인해 보세요.');
-    goto('dash');
-  } catch (err) {
-    console.error(err);
-    alert('❌ 데이터 생성 중 오류가 발생했습니다.');
-  } finally {
-    document.body.removeChild(loading);
-  }
-};
-
-window.resetCurrentCompanyData = async function() {
-  const co = getActiveCo();
-  if (!confirm(`⚠️ "${co.company || '현재 회사'}"의 샘플 데이터만 삭제하시겠습니까?\n수동으로 입력하신 실제 데이터는 유지됩니다.\n삭제 후에는 복구할 수 없습니다.`)) return;
-  
-  const loading = document.createElement('div');
-  loading.style = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;text-align:center';
-  loading.innerHTML = '샘플 데이터 삭제 중...<br>잠시만 기다려 주세요.';
-  document.body.appendChild(loading);
-
-  try {
-    const collections = ['sales', 'purchases', 'customers', 'products'];
-    let totalDeleted = 0;
-    for (const coll of collections) {
-      // isSample이 true인 것만 쿼리
-      const snap = await colPath(coll).where('isSample', '==', true).get();
-      if (snap.empty) continue;
-
-      const batch = db.batch();
-      snap.docs.forEach(doc => {
-        batch.delete(doc.ref);
-        totalDeleted++;
-      });
-      await batch.commit();
-    }
-    
-    if (totalDeleted === 0) {
-      alert('삭제할 샘플 데이터가 없습니다.');
-    } else {
-      alert(`✅ 총 ${totalDeleted}건의 샘플 데이터가 삭제되었습니다.\n수동 입력 데이터는 안전하게 보존되었습니다.`);
-      location.reload(); 
-    }
-  } catch (err) {
-    console.error(err);
-    alert('❌ 초기화 중 오류가 발생했습니다.');
   } finally {
     document.body.removeChild(loading);
   }
