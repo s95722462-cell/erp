@@ -1542,7 +1542,7 @@ function buildInvoiceHTML(items, cur, extraData){
           <th style="background:#e8e8e8;border:1px solid #333;padding:4px 2px;text-align:center;font-size:8px">수량</th>
           <th style="background:#e8e8e8;border:1px solid #333;padding:4px 4px;text-align:center;font-size:8px">단가</th>
           <th style="background:#e8e8e8;border:1px solid #333;padding:4px 4px;text-align:center;font-size:8px">금액</th>
-          <th style="background:#e8e8e8;border:1px solid #333;padding:4px 4px;text-align:center;font-size:8px">세액</th>
+          <th style="background:#e8e8e8;border:1px solid #333;padding:4px 4px;text-align:center;font-size:8px">부가세</th>
           <th style="background:#e8e8e8;border:1px solid #333;padding:4px 4px;text-align:center;font-size:8px">합계</th>
         </tr></thead>
         <tbody>
@@ -1574,7 +1574,7 @@ function buildInvoiceHTML(items, cur, extraData){
       </table>
       <div style="border:1px solid #333;border-radius:2px;overflow:hidden;margin-bottom:3px">
         <div style="display:flex;border-bottom:1px solid #333"><span style="width:68px;padding:2px 6px;font-size:8.5px;color:#333;border-right:1px solid #333;font-weight:600">공급가액</span><span style="flex:1;padding:2px 6px;font-size:8.5px;text-align:right">${Number(sub).toLocaleString()}</span></div>
-        ${cur==='KRW'?`<div style="display:flex;border-bottom:1px solid #333"><span style="width:68px;padding:2px 6px;font-size:8.5px;color:#333;border-right:1px solid #333;font-weight:600">세액(10%)</span><span style="flex:1;padding:2px 6px;font-size:8.5px;text-align:right">${Number(vat).toLocaleString()}</span></div>`:''}
+        ${cur==='KRW'?`<div style="display:flex;border-bottom:1px solid #333"><span style="width:68px;padding:2px 6px;font-size:8.5px;color:#333;border-right:1px solid #333;font-weight:600">부가세</span><span style="flex:1;padding:2px 6px;font-size:8.5px;text-align:right">${Number(vat).toLocaleString()}</span></div>`:''}
         <div style="display:flex;background:#e0e0e0;font-weight:700"><span style="width:68px;padding:2px 6px;font-size:8.5px;border-right:1px solid #333">합계${cur!=='KRW'?' ('+cur+')':''}</span><span style="flex:1;padding:2px 6px;font-size:8.5px;text-align:right">${Number(total).toLocaleString()}</span></div>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:flex-end">
