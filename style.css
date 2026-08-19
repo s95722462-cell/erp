@@ -580,6 +580,7 @@ th:not(.no-col){text-transform:uppercase}
 .erp-body {
   flex: 1;
   overflow-y: auto;
+  overflow-x: auto;
   padding: 0;
 }
 .erp-footer {

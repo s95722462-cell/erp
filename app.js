@@ -329,6 +329,20 @@ function initResizableTable(table, tableId) {
       const styles = window.getComputedStyle(col);
       w = parseInt(styles.width, 10);
 
+      // 드래그를 시작하는 순간, 이 표의 모든 칼럼 너비를 지금 보이는 그대로 고정합니다.
+      // (표를 table-layout:fixed로 바꾸고, 각 칼럼에 현재 픽셀 너비를 명시)
+      // 이렇게 하면 지금 잡은 칼럼만 커지거나 작아지고, 다른 칼럼은 전혀 영향을 받지 않습니다.
+      // 표 전체 너비는 늘어난 만큼만 커지고, 감싸는 영역의 가로 스크롤이 나머지를 처리합니다.
+      table.style.tableLayout = 'fixed';
+      let sum = 0;
+      [].forEach.call(cols, (c) => {
+        const cw = parseInt(window.getComputedStyle(c).width, 10);
+        c.style.width = cw + 'px';
+        c.style.minWidth = cw + 'px';
+        sum += cw;
+      });
+      table.style.width = sum + 'px';
+
       document.addEventListener('mousemove', mouseMoveHandler);
       document.addEventListener('mouseup', mouseUpHandler);
       resizer.classList.add('resizing');
@@ -338,19 +352,12 @@ function initResizableTable(table, tableId) {
       const dx = e.clientX - x;
       const newWidth = w + dx;
       if (newWidth > 30) {
+        const prevWidth = parseInt(col.style.width, 10) || w;
         col.style.width = `${newWidth}px`;
         col.style.minWidth = `${newWidth}px`;
-        
-        // 해당 열의 모든 td도 너비 맞춤
-        const colIndex = Array.from(col.parentNode.children).indexOf(col);
-        const rows = table.querySelectorAll('tr');
-        rows.forEach(row => {
-          const cell = row.children[colIndex];
-          if (cell) {
-            cell.style.width = `${newWidth}px`;
-            cell.style.minWidth = `${newWidth}px`;
-          }
-        });
+        // 표 전체 너비를 변화분만큼만 조정 (다른 칼럼은 이미 고정되어 있어 그대로 유지됨)
+        const curTableWidth = parseInt(table.style.width, 10) || 0;
+        table.style.width = (curTableWidth + (newWidth - prevWidth)) + 'px';
       }
     };
 
@@ -392,6 +399,7 @@ function initApp(){
 
   // 초기화 후 실행할 작업들
   loadActiveCols();
+  initErpColWidths();
   loadSavedLogin();
   
   // 테마 초기화
@@ -1191,6 +1199,38 @@ window.selectSidebarItem = function(type, id) {
   }
 };
 
+// ERP형 입력 표(매출/매입/명세서 작성) + 정적 목록 표(대시보드/거래처/품목/재고)의 칼럼 너비
+// — 페이지 로드 시 저장된 너비 적용 + 드래그 리사이즈 바인딩
+function initErpColWidths(){
+  const tables = [
+    ['sale','sale-erp-table'], ['buy','buy-erp-table'], ['inv','inv-erp-table'],
+    ['recent','recent-table'], ['customers-list','customers-list-table'], ['products-list','products-list-table'],
+    ['stock-value','stock-value-table'], ['stock-list','stock-list-table']
+  ];
+  tables.forEach(([tableId, elId])=>{
+    const table=document.getElementById(elId);
+    if(!table) return;
+    table.querySelectorAll('th[data-key]').forEach(th=>{
+      const key=th.getAttribute('data-key');
+      const saved=colWidths[tableId+'-'+key];
+      if(saved){ th.style.width=saved+'px'; th.style.minWidth=saved+'px'; }
+    });
+    initResizableTable(table, tableId);
+  });
+}
+// 행이 새로 추가될 때, 이미 조정해둔 품목명/규격 열 너비를 그 행에도 그대로 적용
+function applyErpColWidthsToRow(type, tr){
+  const table=document.getElementById(type+'-erp-table');
+  if(!table) return;
+  ['item','spec'].forEach(key=>{
+    const th=table.querySelector(`th[data-key="${key}"]`);
+    if(!th || !th.style.width) return;
+    const thIndex=Array.from(th.parentNode.children).indexOf(th);
+    const td=tr.children[thIndex];
+    if(td){ td.style.width=th.style.width; td.style.minWidth=th.style.width; }
+  });
+}
+
 window.addErpRow = function(type, data = {}) {
   const tbody = document.getElementById(type + '-items-tbody');
   if (!tbody) return;
@@ -1204,10 +1244,11 @@ window.addErpRow = function(type, data = {}) {
     <td><input type="text" class="erp-price" placeholder="0" value="${(data.unitPrice > 0 ? data.unitPrice.toLocaleString() : '')}" oninput="fmtInput(this);calcErpRow('${type}', this)"></td>
     <td><input type="text" class="erp-subtotal" readonly value="${(data.subtotal > 0 ? data.subtotal.toLocaleString() : '')}"></td>
     <td><input type="text" class="erp-total" readonly value="${(data.total > 0 ? data.total.toLocaleString() : '')}"></td>
-    <td><input type="text" class="erp-memo" placeholder="비고" value="${data.memo || ''}"></td>
+    <td><input type="text" class="erp-memo" placeholder="비고" value="${escapeHtml(data.memo || '')}"></td>
     <td><button class="btn btn-sm btn-danger" onclick="removeErpRow('${type}', this)">✕</button></td>
   `;
   tbody.appendChild(tr);
+  applyErpColWidthsToRow(type, tr);
   calcErpTotal(type);
 };
 
@@ -2107,8 +2148,8 @@ function renderStock(){
         const ratio=totalValue>0?Math.round(s.stockValue/totalValue*100):0;
         return `<tr>
           <td class="no-col">${i+1}</td>
-          <td style="font-weight:600">${s.name}</td>
-          <td style="color:var(--text2)">${s.spec||''}</td>
+          <td style="font-weight:600">${escapeHtml(s.name)}</td>
+          <td style="color:var(--text2)">${escapeHtml(s.spec||'')}</td>
           <td style="text-align:right">${s.current>0?Number(s.current).toLocaleString():'0'}</td>
           <td style="text-align:right">${s.unitPrice?fmt(s.unitPrice,s.stockValueCur):'—'}</td>
           <td style="text-align:right;font-weight:700;color:#1a6b3c">${fmt(s.stockValue,s.stockValueCur)}</td>
@@ -2137,10 +2178,10 @@ function renderStock(){
       else{status='✅ 정상';statusStyle='color:#1a6b3c';rowBg='';}
       return `<tr style="${rowBg}">
         <td class="no-col">${i+1}</td>
-        <td style="color:var(--text2);font-size:11px">${s.code||''}</td>
-        <td style="font-weight:600">${s.name}</td>
-        <td style="color:var(--text2)">${s.spec||''}</td>
-        <td style="text-align:center">${s.unit||'EA'}</td>
+        <td style="color:var(--text2);font-size:11px">${escapeHtml(s.code||'')}</td>
+        <td style="font-weight:600">${escapeHtml(s.name)}</td>
+        <td style="color:var(--text2)">${escapeHtml(s.spec||'')}</td>
+        <td style="text-align:center">${escapeHtml(s.unit||'EA')}</td>
         <td style="text-align:right">${Number(s.initStock).toLocaleString()}</td>
         <td style="text-align:right;color:#1a3a6b">${s.inQty?'+'+Number(s.inQty).toLocaleString():'0'}</td>
         <td style="text-align:right;color:#1a3a6b">${s.unitPrice?fmt(s.unitPrice,s.stockValueCur):'—'}</td>
