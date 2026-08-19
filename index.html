@@ -231,7 +231,9 @@
         <!-- 우측 작성 메인 영역 -->
         <div class="erp-main">
           <div class="erp-header">
-            <div class="card-title" style="margin-bottom:10px">📋 거래명세서 작성</div>
+            <div class="card-title" style="margin-bottom:10px">📋 거래명세서 작성
+              <button class="btn btn-sm btn-primary" onclick="saveErpData('inv')" style="margin-left:auto">💾 저장</button>
+            </div>
             <div class="erp-form-grid">
               <div class="fg"><label>발행일</label><input type="date" id="inv-date"></div>
               <div class="fg"><label>공급받는자</label><input id="inv-customer-name" readonly placeholder="좌측에서 선택하세요" style="background:var(--surface2)"></div>
@@ -289,6 +291,7 @@
     <div class="panel" id="panel-sales">
       <div class="card no-print" id="card-sale-reg">
         <div class="card-title">📈 매출 등록
+          <button class="btn btn-sm btn-primary" onclick="saveErpData('sale')" style="margin-left:auto">💾 저장</button>
           <button class="toggle-btn" onclick="toggleCard('card-sale-reg')">접기/펴기</button>
         </div>
         <div class="erp-container no-print">
@@ -373,6 +376,7 @@
         <div class="panel" id="panel-purchase">
         <div class="card no-print" id="card-buy-reg">
         <div class="card-title">📥 매입 등록
+          <button class="btn btn-sm btn-primary" onclick="saveErpData('buy')" style="margin-left:auto">💾 저장</button>
           <button class="toggle-btn" onclick="toggleCard('card-buy-reg')">접기/펴기</button>
         </div>
         <div class="erp-container no-print">
