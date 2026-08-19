@@ -146,19 +146,6 @@
       <div id="low-stock-alert-banner" style="display:none;margin-bottom:14px"></div>
 
       <div class="card">
-        <div class="card-title">⚡ 빠른 입력 <span style="font-weight:400;font-size:12px;color:var(--text2)">— 매입/매출을 한 줄로 동시에 등록</span></div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <input id="quick-entry-input" type="text" placeholder="예: MR-J4-40B 2EA 매입단가 400,000원 유니테크 판매단가 540,000원 서진산전"
-                 style="flex:1;min-width:260px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;background:var(--bg);color:var(--text)"
-                 onkeydown="if(event.key==='Enter')parseQuickEntry()">
-          <button class="btn btn-primary" onclick="parseQuickEntry()">🔍 분석</button>
-        </div>
-        <div id="quick-entry-hint" style="font-size:12px;color:var(--text2);margin-top:6px">
-          품목명·거래처명은 이미 등록된 것과 정확히 일치해야 인식됩니다. 수량은 "개/EA/대", 매입은 "매입단가/매입가/입고단가", 매출은 "판매단가/매출단가/출고단가" 키워드를 붙여주세요.
-        </div>
-      </div>
-
-      <div class="card">
         <div class="card-title">📊 주요 비즈니스 지표</div>
         <div class="kpi-grid">
           <div class="kpi" style="text-align:center"><div class="kpi-label">매출합계(KRW)</div><div class="kpi-val r" id="kpi-sales">—</div></div>
@@ -787,18 +774,6 @@
   </div>
 </div>
 
-<!-- ══ 빠른 입력 확인 모달 ══ -->
-<div class="modal-bg" id="quick-entry-modal" style="display:none" onclick="if(event.target===this)closeModal('quick-entry-modal')">
-  <div class="modal">
-    <div class="modal-title">⚡ 빠른 입력 확인 <button class="modal-close" onclick="closeModal('quick-entry-modal')">✕</button></div>
-    <div id="quick-entry-body"></div>
-    <div class="btn-row" style="margin-top:14px">
-      <button class="btn btn-primary" onclick="confirmQuickEntry()">✅ 매입+매출 저장</button>
-      <button class="btn" onclick="closeModal('quick-entry-modal')">취소</button>
-    </div>
-  </div>
-</div>
-
 <!-- ══ 수정 모달 ══ -->
 <div class="modal-bg" id="edit-modal" style="display:none" onclick="if(event.target===this)closeModal('edit-modal')">
   <div class="modal">
@@ -892,6 +867,6 @@
 <button class="btn btn-primary fixed-save-btn" id="fixed-save-sale" onclick="saveErpData('sale')">💾 매출 내역 저장</button>
 <button class="btn btn-primary fixed-save-btn" id="fixed-save-buy" onclick="saveErpData('buy')">💾 매입 내역 저장</button>
 
-<script src="app.js?v=20260730_audit1"></script>
+<script src="app.js?v=20260730_removeqe"></script>
 </body>
 </html>
