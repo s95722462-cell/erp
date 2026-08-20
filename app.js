@@ -745,19 +745,25 @@ function afterLogin(){
   renderCompanyCards();
   loadSettingsToForm();
   loadSealForActiveCo();
-  initMobileUI(); // 모바일 UI 설정 초기화
   startListeners();
 
   // 드물게 로그인 직후 최초 연결이 지연되는 경우가 있어(원인 불명확),
-  // 몇 초 뒤에도 계속 "연결 중..."이면 회사를 재선택한 것과 동일하게 리스너를 자동으로 다시 연결 시도
-  [4000, 8000, 12000].forEach(delay=>{
-    setTimeout(()=>{
-      const lbl=document.getElementById('sync-label');
-      if(lbl && lbl.textContent==='연결 중...' && currentUser){
-        startListeners();
-      }
-    }, delay);
-  });
+  // 3초 간격으로 최대 30초까지 계속 확인하면서 "연결 중..."이면 자동으로 재연결 시도
+  // (콘솔에 시도 기록을 남겨서, 계속 실패할 경우 원인 파악에 활용)
+  let reconnectAttempts=0;
+  const reconnectTimer=setInterval(()=>{
+    reconnectAttempts++;
+    const lbl=document.getElementById('sync-label');
+    if(!currentUser || !lbl){ clearInterval(reconnectTimer); return; }
+    if(lbl.textContent==='연결 중...'){
+      console.warn(`[재연결 시도 ${reconnectAttempts}] 아직 "연결 중..." 상태 — startListeners() 재실행`);
+      startListeners();
+    } else {
+      console.log(`[재연결] "${lbl.textContent}" 상태로 연결됨 (시도 ${reconnectAttempts}회만에 확인)`);
+      clearInterval(reconnectTimer);
+    }
+    if(reconnectAttempts>=10) clearInterval(reconnectTimer); // 30초(3초x10) 넘으면 중단
+  }, 3000);
 }
 
 // ── 회사 전환 ──
@@ -920,7 +926,10 @@ function startListeners(){
     const u=db.collection(`users/${currentUser.safeId}/companies/${curCoId()}/${n}`)
       .orderBy('createdAt','desc').onSnapshot(snap=>{
         cache[k]=snap.docs.map(d=>({id:d.id,...d.data()}));setSynced();cb();
-      },()=>setOffline());
+      },(err)=>{
+        console.error(`[리스너 오류] ${n} 컬렉션 구독 실패:`, err.code, err.message);
+        setOffline();
+      });
     listeners.push(u);
   };
   listen('customers','customers',()=>{
