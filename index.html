@@ -580,7 +580,9 @@
         </div>
       </div>
 
-      <div class="sec" style="margin-top:20px">전체 거래처 목록</div>
+      <div class="sec" style="display:flex;align-items:center;margin-top:20px">전체 거래처 목록
+        <button class="btn btn-sm" onclick="openColSettings('customers')" style="margin-left:auto">⚙️ 항목 설정</button>
+      </div>
       <div class="tbl-wrap"><table id="customers-list-table">
         <thead><tr><th class="no-col">No.</th><th data-key="name">회사명<div class="resizer no-print"></div></th><th data-key="country">국가<div class="resizer no-print"></div></th><th data-key="bizno">사업자번호<div class="resizer no-print"></div></th><th data-key="contact">담당자<div class="resizer no-print"></div></th><th data-key="tel">연락처<div class="resizer no-print"></div></th><th data-key="email">이메일<div class="resizer no-print"></div></th><th data-key="memo">메모<div class="resizer no-print"></div></th><th class="no-print">관리</th></tr></thead>
         <tbody id="customers-tbody"><tr class="empty-row"><td colspan="9"><div class="loading"><div class="spinner"></div>불러오는 중...</div></td></tr></tbody>
@@ -615,7 +617,9 @@
         </div>
         <div class="btn-row"><button class="btn btn-primary" onclick="saveProduct()">＋ 품목 저장</button></div>
       </div>
-      <div class="sec">품목 목록</div>
+      <div class="sec" style="display:flex;align-items:center">품목 목록
+        <button class="btn btn-sm" onclick="openColSettings('products')" style="margin-left:auto">⚙️ 항목 설정</button>
+      </div>
       <div class="tbl-wrap"><table id="products-list-table">
         <thead><tr><th class="no-col">No.</th><th data-key="code">코드<div class="resizer no-print"></div></th><th data-key="name">품목명<div class="resizer no-print"></div></th><th data-key="spec">규격<div class="resizer no-print"></div></th><th data-key="maker">제조사<div class="resizer no-print"></div></th><th style="text-align:right" data-key="price">기준단가<div class="resizer no-print"></div></th><th data-key="currency">통화<div class="resizer no-print"></div></th><th data-key="unit">단위<div class="resizer no-print"></div></th><th data-key="memo">메모<div class="resizer no-print"></div></th><th class="no-print">관리</th></tr></thead>
         <tbody id="products-tbody"><tr class="empty-row"><td colspan="10"><div class="loading"><div class="spinner"></div>불러오는 중...</div></td></tr></tbody>
@@ -869,6 +873,6 @@
 <button class="btn btn-primary fixed-save-btn" id="fixed-save-sale" onclick="saveErpData('sale')">💾 매출 내역 저장</button>
 <button class="btn btn-primary fixed-save-btn" id="fixed-save-buy" onclick="saveErpData('buy')">💾 매입 내역 저장</button>
 
-<script src="app.js?v=20260730_vatlabel"></script>
+<script src="app.js?v=20260730_colsettings"></script>
 </body>
 </html>

@@ -57,19 +57,42 @@ const tableCols = {
     { k: 'total', l: '합계', align: 'right' },
     { k: 'invNo', l: '인보이스번호' },
     { k: 'memo', l: '비고' }
+  ],
+  products: [
+    { k: 'code', l: '코드' },
+    { k: 'name', l: '품목명' },
+    { k: 'spec', l: '규격' },
+    { k: 'maker', l: '제조사' },
+    { k: 'price', l: '기준단가', align: 'right' },
+    { k: 'currency', l: '통화' },
+    { k: 'unit', l: '단위' },
+    { k: 'memo', l: '메모' }
+  ],
+  customers: [
+    { k: 'name', l: '회사명' },
+    { k: 'country', l: '국가' },
+    { k: 'bizno', l: '사업자번호' },
+    { k: 'contact', l: '담당자' },
+    { k: 'tel', l: '연락처' },
+    { k: 'email', l: '이메일' },
+    { k: 'memo', l: '메모' }
   ]
 };
 
 let activeCols = {
   daily: ['date', 'type', 'party', 'item', 'spec', 'qty', 'unitPrice', 'subtotal', 'vat', 'total', 'memo'],
   sales: ['date', 'buyer', 'item', 'spec', 'qty', 'unitPrice', 'currency', 'subtotal', 'vat', 'total', 'invNo', 'memo'],
-  purchase: ['date', 'vendor', 'item', 'spec', 'qty', 'unitPrice', 'currency', 'subtotal', 'vat', 'total', 'invNo', 'memo']
+  purchase: ['date', 'vendor', 'item', 'spec', 'qty', 'unitPrice', 'currency', 'subtotal', 'vat', 'total', 'invNo', 'memo'],
+  products: ['code', 'name', 'spec', 'maker', 'price', 'currency', 'unit', 'memo'],
+  customers: ['name', 'country', 'bizno', 'contact', 'tel', 'email', 'memo']
 };
 
 let colOrder = {
   daily: ['date', 'type', 'party', 'item', 'spec', 'qty', 'unitPrice', 'subtotal', 'vat', 'total', 'memo'],
   sales: ['date', 'buyer', 'item', 'spec', 'qty', 'unitPrice', 'currency', 'subtotal', 'vat', 'total', 'invNo', 'memo'],
-  purchase: ['date', 'vendor', 'item', 'spec', 'qty', 'unitPrice', 'currency', 'subtotal', 'vat', 'total', 'invNo', 'memo']
+  purchase: ['date', 'vendor', 'item', 'spec', 'qty', 'unitPrice', 'currency', 'subtotal', 'vat', 'total', 'invNo', 'memo'],
+  products: ['code', 'name', 'spec', 'maker', 'price', 'currency', 'unit', 'memo'],
+  customers: ['name', 'country', 'bizno', 'contact', 'tel', 'email', 'memo']
 };
 
 let colWidths = {};
@@ -78,7 +101,13 @@ let currentSettingTable = '';
 
 function loadActiveCols() {
   const savedActive = localStorage.getItem('ierp_active_cols');
-  if (savedActive) activeCols = JSON.parse(savedActive);
+  if (savedActive) {
+    const parsedActive = JSON.parse(savedActive);
+    // 저장된 값이 있는 표만 덮어쓰고, 나중에 새로 추가된 표(예: 품목/거래처)는 기본값을 그대로 유지
+    for (const tableId in tableCols) {
+      if (parsedActive[tableId]) activeCols[tableId] = parsedActive[tableId];
+    }
+  }
   
   const savedOrder = localStorage.getItem('ierp_col_order');
   if (savedOrder) {
@@ -157,6 +186,8 @@ window.saveColumnSettings = function() {
   if (currentSettingTable === 'daily') renderDaily();
   if (currentSettingTable === 'sales') renderSales();
   if (currentSettingTable === 'purchase') renderPurchase();
+  if (currentSettingTable === 'products') renderProducts();
+  if (currentSettingTable === 'customers') renderCustomers();
 };
 
 // ── HTML 이스케이프 (사용자 입력값을 화면에 표시할 때 XSS 방지용) ──
@@ -1204,7 +1235,7 @@ window.selectSidebarItem = function(type, id) {
 function initErpColWidths(){
   const tables = [
     ['sale','sale-erp-table'], ['buy','buy-erp-table'], ['inv','inv-erp-table'],
-    ['recent','recent-table'], ['customers-list','customers-list-table'], ['products-list','products-list-table'],
+    ['recent','recent-table'],
     ['stock-value','stock-value-table'], ['stock-list','stock-list-table']
   ];
   tables.forEach(([tableId, elId])=>{
@@ -1985,19 +2016,51 @@ window.delCustFromForm = async function() {
 function renderCustomers(){
   const tbody = document.getElementById('customers-tbody');
   if(!tbody) return;
-  
+  const table = tbody.closest('table');
+  const theadRow = table.querySelector('thead tr');
+  const tableId = 'customers';
+  const cols = tableCols[tableId];
+  const order = colOrder[tableId];
+  const active = activeCols[tableId];
+  const activeConfigs = order.filter(k=>active.includes(k)).map(k=>cols.find(c=>c.k===k)).filter(Boolean);
+
+  // 헤더 생성
+  let headHtml = `<th class="no-col">No.</th>`;
+  activeConfigs.forEach(c=>{
+    const savedWidth = colWidths[tableId+'-'+c.k];
+    const widthStyle = savedWidth ? `width:${savedWidth}px;min-width:${savedWidth}px;` : '';
+    headHtml += `<th style="${widthStyle}" data-key="${c.k}">${c.l}<div class="resizer no-print"></div></th>`;
+  });
+  headHtml += `<th class="no-print">관리</th>`;
+  theadRow.innerHTML = headHtml;
+
+  const cellVal = (r,key)=>{
+    switch(key){
+      case 'name': return `<strong>${escapeHtml(r.name)}</strong>`;
+      case 'bizno': return `<span style="color:var(--text2)">${escapeHtml(r.bizno||'')}</span>`;
+      case 'email': return `<span style="color:var(--blue)">${escapeHtml(r.email||'')}</span>`;
+      case 'memo': return `<span style="color:var(--text2)">${escapeHtml(r.memo||'')}</span>`;
+      default: return escapeHtml(r[key]||'');
+    }
+  };
+
   tbody.innerHTML=cache.customers.length
-    ?cache.customers.map((r,i)=>`<tr>
-      <td class="no-col">${i+1}</td><td style="font-weight:600">${escapeHtml(r.name)}</td>
-      <td>${escapeHtml(r.country||'')}</td><td style="color:var(--text2)">${escapeHtml(r.bizno||'')}</td>
-      <td>${escapeHtml(r.contact||'')}</td><td>${escapeHtml(r.tel||'')}</td>
-      <td style="color:var(--blue)">${escapeHtml(r.email||'')}</td>
-      <td style="color:var(--text2)">${escapeHtml(r.memo||'')}</td>
-      <td class="no-print" style="white-space:nowrap">
+    ?cache.customers.map((r,i)=>{
+      let row = `<tr><td class="no-col">${i+1}</td>`;
+      activeConfigs.forEach(c=>{
+        const savedWidth = colWidths[tableId+'-'+c.k];
+        const widthStyle = savedWidth ? `width:${savedWidth}px;min-width:${savedWidth}px;` : '';
+        row += `<td style="${widthStyle}">${cellVal(r,c.k)}</td>`;
+      });
+      row += `<td class="no-print" style="white-space:nowrap">
         <button class="btn btn-sm btn-edit" onclick="openEdit('customers','${r.id}')">수정</button>
         <button class="btn btn-sm btn-danger" onclick="delCust('${r.id}')">삭제</button>
-      </td></tr>`).join('')
-    :'<tr class="empty-row"><td colspan="9">거래처를 추가해 주세요</td></tr>';
+      </td></tr>`;
+      return row;
+    }).join('')
+    :`<tr class="empty-row"><td colspan="${activeConfigs.length+2}">거래처를 추가해 주세요</td></tr>`;
+  // 드래그 리사이즈 이벤트 바인딩
+  initResizableTable(table, tableId);
   // 모바일 카드
   renderMobileCards('customers',cache.customers,mCustomerCard);
   // 사이드바 업데이트
@@ -2028,19 +2091,57 @@ window.saveProduct=async function(){
   alert('✅ 품목이 저장되었습니다!');
 };
 function renderProducts(){
-  document.getElementById('products-tbody').innerHTML=cache.products.length
-    ?cache.products.map((r,i)=>`<tr>
-      <td class="no-col">${i+1}</td><td style="color:var(--text2)">${escapeHtml(r.code||'')}</td>
-      <td style="font-weight:600">${escapeHtml(r.name)}</td><td style="color:var(--text2)">${escapeHtml(r.spec||'')}</td>
-      <td>${escapeHtml(r.maker||'')}</td>
-      <td style="font-weight:500;text-align:right">${fmt(r.price,r.currency)}</td>
-      <td><span class="tag tag-${(r.currency||'krw').toLowerCase()}">${r.currency}</span></td>
-      <td>${escapeHtml(r.unit||'')}</td><td style="color:var(--text2)">${escapeHtml(r.memo||'')}</td>
-      <td class="no-print" style="white-space:nowrap">
+  const tbody = document.getElementById('products-tbody');
+  if(!tbody) return;
+  const table = tbody.closest('table');
+  const theadRow = table.querySelector('thead tr');
+  const tableId = 'products';
+  const cols = tableCols[tableId];
+  const order = colOrder[tableId];
+  const active = activeCols[tableId];
+  const activeConfigs = order.filter(k=>active.includes(k)).map(k=>cols.find(c=>c.k===k)).filter(Boolean);
+
+  // 헤더 생성
+  let headHtml = `<th class="no-col">No.</th>`;
+  activeConfigs.forEach(c=>{
+    const align = c.align==='right' ? 'text-align:right' : '';
+    const savedWidth = colWidths[tableId+'-'+c.k];
+    const widthStyle = savedWidth ? `width:${savedWidth}px;min-width:${savedWidth}px;` : '';
+    headHtml += `<th style="${align};${widthStyle}" data-key="${c.k}">${c.l}<div class="resizer no-print"></div></th>`;
+  });
+  headHtml += `<th class="no-print">관리</th>`;
+  theadRow.innerHTML = headHtml;
+
+  const cellVal = (r,key)=>{
+    switch(key){
+      case 'code': return `<span style="color:var(--text2)">${escapeHtml(r.code||'')}</span>`;
+      case 'name': return `<strong>${escapeHtml(r.name)}</strong>`;
+      case 'spec': return `<span style="color:var(--text2)">${escapeHtml(r.spec||'')}</span>`;
+      case 'price': return `<span style="font-weight:500">${fmt(r.price,r.currency)}</span>`;
+      case 'currency': return `<span class="tag tag-${(r.currency||'krw').toLowerCase()}">${escapeHtml(r.currency||'')}</span>`;
+      case 'memo': return `<span style="color:var(--text2)">${escapeHtml(r.memo||'')}</span>`;
+      default: return escapeHtml(r[key]||'');
+    }
+  };
+
+  tbody.innerHTML=cache.products.length
+    ?cache.products.map((r,i)=>{
+      let row = `<tr><td class="no-col">${i+1}</td>`;
+      activeConfigs.forEach(c=>{
+        const align = c.align==='right' ? 'text-align:right' : '';
+        const savedWidth = colWidths[tableId+'-'+c.k];
+        const widthStyle = savedWidth ? `width:${savedWidth}px;min-width:${savedWidth}px;` : '';
+        row += `<td style="${align};${widthStyle}">${cellVal(r,c.k)}</td>`;
+      });
+      row += `<td class="no-print" style="white-space:nowrap">
         <button class="btn btn-sm btn-edit" onclick="openEdit('products','${r.id}')">수정</button>
         <button class="btn btn-sm btn-danger" onclick="delProd('${r.id}')">삭제</button>
-      </td></tr>`).join('')
-    :'<tr class="empty-row"><td colspan="10">품목을 추가해 주세요</td></tr>';
+      </td></tr>`;
+      return row;
+    }).join('')
+    :`<tr class="empty-row"><td colspan="${activeConfigs.length+2}">품목을 추가해 주세요</td></tr>`;
+  // 드래그 리사이즈 이벤트 바인딩
+  initResizableTable(table, tableId);
   // 모바일 카드
   renderMobileCards('products',cache.products,mProductCard);
 }
