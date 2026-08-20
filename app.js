@@ -1535,16 +1535,14 @@ function buildInvoiceHTML(items, cur, extraData){
     const dateShort = date ? date.slice(5).replace('-','/') : '';
     return `<div style="width:100%;margin-bottom:3mm;padding-bottom:3mm;border-bottom:1px dashed #666;font-size:10px;line-height:1.45;font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;box-sizing:border-box">
       <div style="text-align:center;font-size:17px;font-weight:700;letter-spacing:6px;margin-bottom:2px">거래명세서</div>
-      <div style="text-align:center;font-size:9px;color:#333;margin-bottom:4px">[ ${label} ]</div>
-      <div style="display:flex;justify-content:flex-end;gap:12px;font-size:8.5px;margin-bottom:3px">
-        <span><b>No.</b> ${escapeHtml(no)}</span>
-      </div>
+      <div style="text-align:center;font-size:9px;color:#333;margin-bottom:6px">[ ${label} ]</div>
       <div style="border-top:1.5px solid #000;border-bottom:1px solid #000;margin-bottom:6px"></div>
 
       <div style="display:flex;gap:6px;margin-bottom:6px;align-items:stretch">
         <!-- 좌측: 거래처 정보(간단 표기) + 합계금액 -->
         <div style="flex:1;display:flex;flex-direction:column;justify-content:space-between">
           <div>
+            <div style="display:flex;font-size:9.5px;padding:2px 0"><span style="width:44px;color:#333">No.</span>：<span style="margin-left:4px">${escapeHtml(no)}</span></div>
             <div style="display:flex;font-size:9.5px;padding:2px 0"><span style="width:44px;color:#333">일　자</span>：<span style="margin-left:4px">${escapeHtml(date)}</span></div>
             <div style="display:flex;font-size:9.5px;padding:2px 0"><span style="width:44px;color:#333">거래처</span>：<span style="margin-left:4px;font-weight:600">${escapeHtml(buyerName)}</span></div>
             <div style="display:flex;font-size:9.5px;padding:2px 0"><span style="width:44px;color:#333">주　소</span>：<span style="margin-left:4px;word-break:break-all">${escapeHtml(buyer.addr||'—')}</span></div>
