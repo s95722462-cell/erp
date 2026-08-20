@@ -72,7 +72,9 @@ const tableCols = {
     { k: 'name', l: '회사명' },
     { k: 'country', l: '국가' },
     { k: 'bizno', l: '사업자번호' },
-    { k: 'contact', l: '담당자' },
+    { k: 'contact', l: '대표자' },
+    { k: 'biztype', l: '업태' },
+    { k: 'bizitem', l: '종목' },
     { k: 'tel', l: '연락처' },
     { k: 'email', l: '이메일' },
     { k: 'memo', l: '메모' }
@@ -84,7 +86,7 @@ let activeCols = {
   sales: ['date', 'buyer', 'item', 'spec', 'qty', 'unitPrice', 'currency', 'subtotal', 'vat', 'total', 'invNo', 'memo'],
   purchase: ['date', 'vendor', 'item', 'spec', 'qty', 'unitPrice', 'currency', 'subtotal', 'vat', 'total', 'invNo', 'memo'],
   products: ['code', 'name', 'spec', 'maker', 'price', 'currency', 'unit', 'memo'],
-  customers: ['name', 'country', 'bizno', 'contact', 'tel', 'email', 'memo']
+  customers: ['name', 'country', 'bizno', 'contact', 'biztype', 'bizitem', 'tel', 'email', 'memo']
 };
 
 let colOrder = {
@@ -92,7 +94,7 @@ let colOrder = {
   sales: ['date', 'buyer', 'item', 'spec', 'qty', 'unitPrice', 'currency', 'subtotal', 'vat', 'total', 'invNo', 'memo'],
   purchase: ['date', 'vendor', 'item', 'spec', 'qty', 'unitPrice', 'currency', 'subtotal', 'vat', 'total', 'invNo', 'memo'],
   products: ['code', 'name', 'spec', 'maker', 'price', 'currency', 'unit', 'memo'],
-  customers: ['name', 'country', 'bizno', 'contact', 'tel', 'email', 'memo']
+  customers: ['name', 'country', 'bizno', 'contact', 'biztype', 'bizitem', 'tel', 'email', 'memo']
 };
 
 let colWidths = {};
@@ -1721,13 +1723,18 @@ function getItems(){
   }).filter(i=>i.qty>0);
 }
 function getBuyer(){
+  const id = document.getElementById('inv-customer-id')?.value;
   const name = document.getElementById('inv-customer-name')?.value;
+  if (id) {
+    const c = cache.customers.find(x=>x.id===id);
+    if (c) return { id, name: c.name, bizno: c.bizno||'', addr: c.addr||'', ceo: c.contact||'', tel: c.tel||'' };
+  }
   if (name) {
     return {
-      id: document.getElementById('inv-customer-id').value,
+      id: id||'',
       name: name,
       bizno: document.getElementById('inv-bizno').value,
-      addr: '', // 상세 정보 필요 시 캐시 활용 가능
+      addr: '',
       ceo: '',
       tel: ''
     };
@@ -1985,6 +1992,8 @@ window.saveCustomer=async function(){
     bizno:document.getElementById('c-bizno').value,
     country:document.getElementById('c-country').value,
     contact:document.getElementById('c-contact').value,
+    biztype:document.getElementById('c-biztype').value,
+    bizitem:document.getElementById('c-bizitem').value,
     tel:document.getElementById('c-tel').value,
     email:document.getElementById('c-email').value,
     addr:document.getElementById('c-addr').value,
@@ -2160,7 +2169,7 @@ window.delProd=async function(id){if(confirm('삭제하시겠습니까?'))await 
 const editFields={
   sales:[{k:'date',l:'날짜',t:'date'},{k:'buyer',l:'거래처',t:'text'},{k:'item',l:'품목명',t:'text'},{k:'spec',l:'규격',t:'text'},{k:'qty',l:'수량',t:'number'},{k:'unitPrice',l:'단가',t:'number'},{k:'subtotal',l:'공급가액',t:'number'},{k:'vat',l:'세액',t:'number'},{k:'total',l:'합계',t:'number'},{k:'invNo',l:'명세서No.',t:'text'},{k:'memo',l:'비고',t:'text'}],
   purchases:[{k:'date',l:'날짜',t:'date'},{k:'vendor',l:'공급업체',t:'text'},{k:'item',l:'품목명',t:'text'},{k:'spec',l:'규격',t:'text'},{k:'qty',l:'수량',t:'number'},{k:'unitPrice',l:'단가',t:'number'},{k:'subtotal',l:'공급가액',t:'number'},{k:'vat',l:'세액',t:'number'},{k:'total',l:'합계',t:'number'},{k:'invNo',l:'인보이스번호',t:'text'},{k:'memo',l:'비고',t:'text'}],
-  customers:[{k:'name',l:'회사명',t:'text'},{k:'bizno',l:'사업자번호',t:'text'},{k:'country',l:'국가',t:'text'},{k:'contact',l:'담당자',t:'text'},{k:'tel',l:'연락처',t:'text'},{k:'email',l:'이메일',t:'text'},{k:'addr',l:'주소',t:'text'},{k:'memo',l:'메모',t:'text'}],
+  customers:[{k:'name',l:'회사명',t:'text'},{k:'bizno',l:'사업자번호',t:'text'},{k:'country',l:'국가',t:'text'},{k:'contact',l:'대표자',t:'text'},{k:'biztype',l:'업태',t:'text'},{k:'bizitem',l:'종목',t:'text'},{k:'tel',l:'연락처',t:'text'},{k:'email',l:'이메일',t:'text'},{k:'addr',l:'주소',t:'text'},{k:'memo',l:'메모',t:'text'}],
   products:[{k:'code',l:'품목코드',t:'text'},{k:'name',l:'품목명',t:'text'},{k:'spec',l:'규격',t:'text'},{k:'maker',l:'제조사',t:'text'},{k:'price',l:'기준단가',t:'number'},{k:'unit',l:'단위',t:'text'},{k:'stock',l:'초기재고',t:'number'},{k:'safeStock',l:'안전재고',t:'number'},{k:'memo',l:'메모',t:'text'}]
 };
 const colLabels={sales:'매출',purchases:'매입',customers:'거래처',products:'품목'};
@@ -2529,10 +2538,10 @@ window.exportExcel=async function(){
   XLSX.utils.book_append_sheet(wb,purchSheet,'매입장부');
 
   // ── 거래처 시트 ──
-  const custHeader=[['No.','회사명','국가','사업자번호','담당자','연락처','이메일','주소','메모']];
+  const custHeader=[['No.','회사명','국가','사업자번호','대표자','업태','종목','연락처','이메일','주소','메모']];
   const custRows=cache.customers.map((r,i)=>[
     i+1, r.name||'', r.country||'', r.bizno||'',
-    r.contact||'', r.tel||'', r.email||'', r.addr||'', r.memo||''
+    r.contact||'', r.biztype||'', r.bizitem||'', r.tel||'', r.email||'', r.addr||'', r.memo||''
   ]);
   const custSheet=XLSX.utils.aoa_to_sheet([...custHeader,...custRows]);
   XLSX.utils.book_append_sheet(wb,custSheet,'거래처');
@@ -2648,7 +2657,7 @@ window.doGlobalSearch = function() {
   // 3. 거래처 검색
   cache.customers.forEach(r => {
     if ((r.name||'').toLowerCase().includes(q) || (r.contact||'').toLowerCase().includes(q) || (r.bizno||'').toLowerCase().includes(q)) {
-      results.push({ type: '거래처', title: r.name, sub: `${r.contact||'담당자 없음'} | ${r.tel||''} | ${r.addr||''}`, tab: 'customers' });
+      results.push({ type: '거래처', title: r.name, sub: `${r.contact||'대표자 없음'} | ${r.tel||''} | ${r.addr||''}`, tab: 'customers' });
     }
   });
 
@@ -2953,7 +2962,9 @@ window.openFab=function(){
         <div class="fg"><label>회사명 *</label><input id="ms-c-name" placeholder="회사명"></div>
         <div class="fg"><label>사업자번호</label><input id="ms-c-bizno" placeholder="000-00-00000"></div>
         <div class="fg"><label>국가</label><select id="ms-c-country"><option>한국</option><option>일본</option><option>미국</option><option>중국</option><option>독일</option><option>대만</option><option>기타</option></select></div>
-        <div class="fg"><label>담당자</label><input id="ms-c-contact" placeholder="담당자명"></div>
+        <div class="fg"><label>대표자</label><input id="ms-c-contact" placeholder="대표자명"></div>
+        <div class="fg"><label>업태</label><input id="ms-c-biztype" placeholder="제조업, 도소매 등"></div>
+        <div class="fg"><label>종목</label><input id="ms-c-bizitem" placeholder="자동화 부품 등"></div>
         <div class="fg"><label>연락처</label><input id="ms-c-tel" placeholder="010-0000-0000"></div>
         <div class="fg"><label>이메일</label><input id="ms-c-email" placeholder="이메일"></div>
         <div class="fg"><label>주소</label><input id="ms-c-addr" placeholder="주소"></div>
@@ -3088,6 +3099,8 @@ window.mSaveCustomer=async function(){
     name,bizno:document.getElementById('ms-c-bizno').value,
     country:document.getElementById('ms-c-country').value,
     contact:document.getElementById('ms-c-contact').value,
+    biztype:document.getElementById('ms-c-biztype').value,
+    bizitem:document.getElementById('ms-c-bizitem').value,
     tel:document.getElementById('ms-c-tel').value,
     email:document.getElementById('ms-c-email').value,
     addr:document.getElementById('ms-c-addr').value,
@@ -3180,8 +3193,7 @@ async function processOcrFile(file){
   document.getElementById('ai-preview').style.display='none';
   try{
     const text=await callVisionOcr(file);
-    const isCompany=(aiTarget==='company'||aiTarget==='newco');
-    aiResult=isCompany?parseBizDoc(text):parseCardDoc(text);
+    aiResult=parseBizDoc(text);
     aiResult._rawText=text;
     showOcrPreview(text);
   }catch(e){
@@ -3191,10 +3203,7 @@ async function processOcrFile(file){
 
 function showOcrPreview(rawText){
   document.getElementById('ai-status').innerHTML='';
-  const isCompany=(aiTarget==='company'||aiTarget==='newco');
-  const fieldDefs=isCompany
-    ?[{k:'company',l:'상호명'},{k:'bizno',l:'사업자번호'},{k:'ceo',l:'대표자명'},{k:'biztype',l:'업태'},{k:'bizitem',l:'종목'},{k:'addr',l:'주소'},{k:'tel',l:'전화번호'},{k:'email',l:'이메일'}]
-    :[{k:'name',l:'회사명'},{k:'bizno',l:'사업자번호'},{k:'contact',l:'담당자'},{k:'tel',l:'전화번호'},{k:'email',l:'이메일'},{k:'addr',l:'주소'},{k:'memo',l:'메모'}];
+  const fieldDefs=[{k:'company',l:'상호명'},{k:'bizno',l:'사업자번호'},{k:'ceo',l:'대표자명'},{k:'biztype',l:'업태'},{k:'bizitem',l:'종목'},{k:'addr',l:'주소'},{k:'tel',l:'전화번호'},{k:'email',l:'이메일'}];
 
   document.getElementById('ai-fields').innerHTML=`
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:12px">
@@ -3208,13 +3217,10 @@ function showOcrPreview(rawText){
 }
 
 window.applyAiResult=function(){
-  const isCompany=(aiTarget==='company'||aiTarget==='newco');
-  const fieldDefs=isCompany
-    ?[{k:'company',l:'상호명'},{k:'bizno',l:'사업자번호'},{k:'ceo',l:'대표자명'},{k:'biztype',l:'업태'},{k:'bizitem',l:'종목'},{k:'addr',l:'주소'},{k:'tel',l:'전화번호'},{k:'email',l:'이메일'}]
-    :[{k:'name',l:'회사명'},{k:'bizno',l:'사업자번호'},{k:'contact',l:'담당자'},{k:'tel',l:'전화번호'},{k:'email',l:'이메일'},{k:'addr',l:'주소'},{k:'memo',l:'메모'}];
+  const fieldDefs=[{k:'company',l:'상호명'},{k:'bizno',l:'사업자번호'},{k:'ceo',l:'대표자명'},{k:'biztype',l:'업태'},{k:'bizitem',l:'종목'},{k:'addr',l:'주소'},{k:'tel',l:'전화번호'},{k:'email',l:'이메일'}];
 
   const map={
-    customer: {name:'c-name',bizno:'c-bizno',contact:'c-contact',tel:'c-tel',email:'c-email',addr:'c-addr',memo:'c-memo'},
+    customer: {company:'c-name',bizno:'c-bizno',ceo:'c-contact',biztype:'c-biztype',bizitem:'c-bizitem',addr:'c-addr',tel:'c-tel',email:'c-email'},
     company: {company:'s-company',bizno:'s-bizno',ceo:'s-ceo',biztype:'s-biztype',bizitem:'s-bizitem',addr:'s-addr',tel:'s-tel',email:'s-email'},
     newco: {company:'nc-company',bizno:'nc-bizno',ceo:'nc-ceo',biztype:'nc-biztype',bizitem:'nc-bizitem',addr:'nc-addr',tel:'nc-tel',email:'nc-email'}
   };
@@ -3371,37 +3377,6 @@ function parseBizDoc(text){
   return r;
 }
 
-// 명함/거래처 서류 파싱
-function parseCardDoc(text){
-  const r={name:'',bizno:'',contact:'',tel:'',email:'',addr:'',memo:''};
-  const lines=text.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
-
-  // 이메일
-  const emailMatch=text.match(/[\w.-]+@[\w.-]+\.[a-zA-Z]{2,}/);
-  if(emailMatch) r.email=emailMatch[0];
-
-  // 전화번호
-  const telMatch=text.match(/(0\d{1,2}[-\s]?\d{3,4}[-\s]?\d{4})/);
-  if(telMatch) r.tel=telMatch[1];
-
-  // 사업자번호
-  const biznoMatch=text.match(/(\d{3}[-\s]?\d{2}[-\s]?\d{5})/);
-  if(biznoMatch) r.bizno=biznoMatch[1];
-
-  // 첫 줄이 회사명일 가능성 높음
-  if(lines[0]) r.name=lines[0];
-
-  // 이름(담당자): 한글 2~4자
-  const nameCandidate=lines.find(l=>/^[가-힣]{2,4}$/.test(l));
-  if(nameCandidate) r.contact=nameCandidate;
-
-  // 주소: 시/도로 시작
-  const addrLine=lines.find(l=>/(서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)/.test(l));
-  if(addrLine) r.addr=addrLine;
-
-  return r;
-}
-
 // ── 모바일 카드형 목록 렌더링 ──
 function renderMobileCards(panelId, items, buildCard){
   if(!isMobile()) return;
@@ -3483,7 +3458,8 @@ function mCustomerCard(r,i){
       </div>
     </div>
     <div class="m-card-rows">
-      ${r.contact?`<div class="m-card-row"><span class="m-card-lbl">담당자</span><span class="m-card-val">${escapeHtml(r.contact)}</span></div>`:''}
+      ${r.contact?`<div class="m-card-row"><span class="m-card-lbl">대표자</span><span class="m-card-val">${escapeHtml(r.contact)}</span></div>`:''}
+      ${(r.biztype||r.bizitem)?`<div class="m-card-row"><span class="m-card-lbl">업태/종목</span><span class="m-card-val">${escapeHtml(r.biztype||'')}${r.biztype&&r.bizitem?' / ':''}${escapeHtml(r.bizitem||'')}</span></div>`:''}
       ${r.tel?`<div class="m-card-row"><span class="m-card-lbl">연락처</span><span class="m-card-val"><a href="tel:${escapeHtml(r.tel)}" style="color:var(--blue)">${escapeHtml(r.tel)}</a></span></div>`:''}
       ${r.email?`<div class="m-card-row"><span class="m-card-lbl">이메일</span><span class="m-card-val" style="word-break:break-all">${escapeHtml(r.email)}</span></div>`:''}
       ${r.addr?`<div class="m-card-row"><span class="m-card-lbl">주소</span><span class="m-card-val" style="word-break:break-all">${escapeHtml(r.addr)}</span></div>`:''}
