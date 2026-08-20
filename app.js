@@ -796,9 +796,9 @@ function renderCompanyCards(){
   let html=companies.map((c,i)=>`
     <div class="company-card${i===activeCoIdx?' active-co':''}" onclick="switchCompany(${i})">
       ${i===activeCoIdx?'<div class="co-badge">사용 중</div>':''}
-      <div class="co-name">${c.company||'(이름 없음)'}</div>
-      <div class="co-biz">사업자번호: ${c.bizno||'—'}</div>
-      <div class="co-biz">대표자: ${c.ceo||'—'}</div>
+      <div class="co-name">${escapeHtml(c.company||'(이름 없음)')}</div>
+      <div class="co-biz">사업자번호: ${escapeHtml(c.bizno||'—')}</div>
+      <div class="co-biz">대표자: ${escapeHtml(c.ceo||'—')}</div>
       <div class="co-actions">
         <button class="btn btn-sm btn-edit" onclick="event.stopPropagation();editCoInSettings(${i})">편집</button>
         ${companies.length>1?`<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteCoByIdx(${i})">삭제</button>`:''}
