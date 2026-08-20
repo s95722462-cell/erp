@@ -1531,7 +1531,7 @@ function buildInvoiceHTML(items, cur, extraData){
   const manager=document.getElementById('inv-manager')?.value || '';
   const receiver=document.getElementById('inv-receiver')?.value || '';
   const footer=co.footer||'본 거래명세서는 발행일로부터 30일 이내 결제 바랍니다.';
-  const empty=Math.max(0,12-items.length);
+  const empty=Math.max(0,9-items.length);
 
   function half(label){
     const dateShort = date ? date.slice(5).replace('-','/') : '';
@@ -1589,7 +1589,7 @@ function buildInvoiceHTML(items, cur, extraData){
             const rowVat=cur==='KRW'?Math.round(it.amount*.1):0;
             const bg=i%2===1?'#f2f2f2':'#fff';
             const nameWithSpec=it.spec?`${it.name} (${it.spec})`:it.name;
-            return `<tr style="height:22px;background:${bg}">
+            return `<tr style="height:19px;background:${bg}">
               <td style="border:1px solid #333;padding:2px;text-align:center;font-size:8.5px">${escapeHtml(dateShort)}</td>
               <td style="border:1px solid #333;padding:2px 5px;word-break:break-all">${escapeHtml(nameWithSpec)}</td>
               <td style="border:1px solid #333;padding:2px;text-align:center">${Number(it.qty).toLocaleString()}</td>
@@ -1602,7 +1602,7 @@ function buildInvoiceHTML(items, cur, extraData){
           ${Array(empty).fill(0).map((_,idx)=>{
             const rowIdx=items.length+idx;
             const bg=rowIdx%2===1?'#f2f2f2':'#fff';
-            return `<tr style="height:22px;background:${bg}">
+            return `<tr style="height:19px;background:${bg}">
             <td style="border:1px solid #333;padding:2px">&nbsp;</td>
             <td style="border:1px solid #333"></td>
             <td style="border:1px solid #333"></td>
