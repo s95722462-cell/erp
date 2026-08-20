@@ -1567,17 +1567,19 @@ function buildInvoiceHTML(items, cur, extraData){
 
       <table style="width:100%;border-collapse:collapse;font-size:9px;margin-bottom:4px;table-layout:fixed">
         <colgroup>
-          <col style="width:36px">
+          <col style="width:32px">
           <col>
-          <col style="width:26px">
-          <col style="width:56px">
-          <col style="width:58px">
+          <col style="width:60px">
+          <col style="width:22px">
           <col style="width:50px">
+          <col style="width:52px">
           <col style="width:44px">
+          <col style="width:36px">
         </colgroup>
         <thead><tr>
           <th style="background:#e8e8e8;border:1px solid #333;padding:4px 2px;text-align:center;text-transform:none;font-size:8.5px">월일</th>
           <th style="background:#e8e8e8;border:1px solid #333;padding:4px 6px;text-align:center;font-size:8.5px">품　목　명</th>
+          <th style="background:#e8e8e8;border:1px solid #333;padding:4px 4px;text-align:center;font-size:8.5px">규격</th>
           <th style="background:#e8e8e8;border:1px solid #333;padding:4px 2px;text-align:center;font-size:8.5px">수량</th>
           <th style="background:#e8e8e8;border:1px solid #333;padding:4px 4px;text-align:center;font-size:8.5px">단가</th>
           <th style="background:#e8e8e8;border:1px solid #333;padding:4px 4px;text-align:center;font-size:8.5px">공급가액</th>
@@ -1588,10 +1590,10 @@ function buildInvoiceHTML(items, cur, extraData){
           ${items.map((it,i)=>{
             const rowVat=cur==='KRW'?Math.round(it.amount*.1):0;
             const bg=i%2===1?'#f2f2f2':'#fff';
-            const nameWithSpec=it.spec?`${it.name} (${it.spec})`:it.name;
             return `<tr style="height:19px;background:${bg}">
               <td style="border:1px solid #333;padding:2px;text-align:center;font-size:8.5px">${escapeHtml(dateShort)}</td>
-              <td style="border:1px solid #333;padding:2px 5px;word-break:break-all">${escapeHtml(nameWithSpec)}</td>
+              <td style="border:1px solid #333;padding:2px 5px;word-break:break-all">${escapeHtml(it.name)}</td>
+              <td style="border:1px solid #333;padding:2px 4px;text-align:center;color:#333;word-break:break-all">${escapeHtml(it.spec||'')}</td>
               <td style="border:1px solid #333;padding:2px;text-align:center">${Number(it.qty).toLocaleString()}</td>
               <td style="border:1px solid #333;padding:2px 4px;text-align:right">${Number(it.unitPrice).toLocaleString()}</td>
               <td style="border:1px solid #333;padding:2px 4px;text-align:right">${Number(it.amount).toLocaleString()}</td>
@@ -1604,6 +1606,7 @@ function buildInvoiceHTML(items, cur, extraData){
             const bg=rowIdx%2===1?'#f2f2f2':'#fff';
             return `<tr style="height:19px;background:${bg}">
             <td style="border:1px solid #333;padding:2px">&nbsp;</td>
+            <td style="border:1px solid #333"></td>
             <td style="border:1px solid #333"></td>
             <td style="border:1px solid #333"></td>
             <td style="border:1px solid #333"></td>
