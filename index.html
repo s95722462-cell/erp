@@ -556,9 +556,7 @@
           <!-- 우측 거래처 상세/등록 영역 -->
           <div class="erp-main">
             <div class="erp-header">
-              <div class="card-title">🏢 거래처 정보 등록/수정
-                <button class="btn btn-ai btn-sm" onclick="openAiScan('customer')" style="margin-left:auto">🤖 AI 스캔</button>
-              </div>
+              <div class="card-title">🏢 거래처 정보 등록/수정</div>
               <div class="erp-form-grid">
                 <div class="fg"><label>회사명 *</label><input id="c-name" placeholder="(주)○○무역"></div>
                 <div class="fg"><label>사업자번호</label><input id="c-bizno" placeholder="000-00-00000"></div>
@@ -719,25 +717,12 @@
               <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
             </div>
           </div>
-
-          <div class="card" style="border-color:#a0d4b0">
-            <div class="card-title" style="color:var(--green)">📸 OCR 스캔 안내 (Google Cloud Vision)</div>
-            <div style="font-size:12px;color:var(--text2);line-height:1.8">
-              사업자등록증·명함 스캔은 <strong>Google Cloud Vision API</strong>를 사용합니다.<br>
-              • 월 1,000건 무료 (매월 초기화)<br>
-              • 한국어 인식률 최고 수준<br>
-              • 브라우저에서 직접 처리<br>
-              • 사진이 선명할수록 인식률이 높아집니다
-            </div>
-          </div>
         </div>
 
         <!-- 오른쪽 열 -->
         <div>
           <div class="card">
-            <div class="card-title">✏️ 회사 정보 편집
-              <button class="btn btn-ai btn-sm" onclick="openAiScan('company')">🤖 스캔 자동입력</button>
-            </div>
+            <div class="card-title">✏️ 회사 정보 편집</div>
             <div class="fg" style="margin-bottom:10px"><label>편집할 회사 선택</label>
               <select id="s-co-sel" onchange="loadCoToForm(this.value)"><option value="">— 선택 —</option></select>
             </div>
@@ -835,20 +820,6 @@
 <div class="modal-bg" id="addco-modal" style="display:none" onclick="if(event.target===this)closeModal('addco-modal')">
   <div class="modal">
     <div class="modal-title">새 회사 추가 <button class="modal-close" onclick="closeModal('addco-modal')">✕</button></div>
-
-    <!-- 내장 OCR 업로드 영역 -->
-    <div style="border:2px dashed #a0d4b0;border-radius:8px;padding:14px;text-align:center;cursor:pointer;background:#f0faf4;margin-bottom:12px;transition:all .2s"
-      id="addco-upload-zone"
-      onclick="document.getElementById('addco-file-input').click()"
-      ondragover="event.preventDefault();this.style.borderColor='#1a6b3c';this.style.background='#e8f5ee'"
-      ondragleave="this.style.borderColor='#a0d4b0';this.style.background='#f0faf4'"
-      ondrop="handleAddcoDrop(event)">
-      <div style="font-size:22px">📸</div>
-      <div style="font-size:13px;font-weight:600;color:#1a6b3c;margin-top:4px">사업자등록증 사진으로 자동입력</div>
-      <div style="font-size:11px;color:#6b6960;margin-top:2px">클릭하거나 파일을 드래그하세요 (JPG, PNG)</div>
-    </div>
-    <input type="file" id="addco-file-input" accept="image/*" style="display:none" onchange="handleAddcoFileSelect(event)">
-    <div id="addco-ocr-status"></div>
 
     <div class="form-grid" style="grid-template-columns:1fr 1fr">
       <div class="fg"><label>상호명 *</label><input id="nc-company" placeholder="(주)○○무역"></div>
