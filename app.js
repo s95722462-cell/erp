@@ -1529,14 +1529,14 @@ function buildInvoiceHTML(items, cur, extraData){
   const manager=document.getElementById('inv-manager')?.value || '';
   const receiver=document.getElementById('inv-receiver')?.value || '';
   const footer=co.footer||'본 거래명세서는 발행일로부터 30일 이내 결제 바랍니다.';
-  const empty=Math.max(0,7-items.length);
+  const empty=Math.max(0,12-items.length);
 
   function half(label){
     const dateShort = date ? date.slice(5).replace('-','/') : '';
-    return `<div style="width:100%;margin-bottom:3mm;padding-bottom:3mm;border-bottom:1px dashed #666;font-size:9.5px;line-height:1.45;font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;box-sizing:border-box">
-      <div style="text-align:center;font-size:16px;font-weight:700;letter-spacing:6px;margin-bottom:2px">거래명세서</div>
+    return `<div style="width:100%;margin-bottom:3mm;padding-bottom:3mm;border-bottom:1px dashed #666;font-size:10px;line-height:1.45;font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;box-sizing:border-box">
+      <div style="text-align:center;font-size:17px;font-weight:700;letter-spacing:6px;margin-bottom:2px">거래명세서</div>
       <div style="text-align:center;font-size:9px;color:#333;margin-bottom:4px">[ ${label} ]</div>
-      <div style="display:flex;justify-content:flex-end;gap:12px;font-size:8px;margin-bottom:3px">
+      <div style="display:flex;justify-content:flex-end;gap:12px;font-size:8.5px;margin-bottom:3px">
         <span><b>No.</b> ${escapeHtml(no)}</span>
       </div>
       <div style="border-top:1.5px solid #000;border-bottom:1px solid #000;margin-bottom:6px"></div>
@@ -1545,27 +1545,27 @@ function buildInvoiceHTML(items, cur, extraData){
         <!-- 좌측: 거래처 정보(간단 표기) + 합계금액 -->
         <div style="flex:1;display:flex;flex-direction:column;justify-content:space-between">
           <div>
-            <div style="display:flex;font-size:9px;padding:1.5px 0"><span style="width:44px;color:#333">일　자</span>：<span style="margin-left:4px">${escapeHtml(date)}</span></div>
-            <div style="display:flex;font-size:9px;padding:1.5px 0"><span style="width:44px;color:#333">거래처</span>：<span style="margin-left:4px;font-weight:600">${escapeHtml(buyerName)}</span></div>
-            <div style="display:flex;font-size:9px;padding:1.5px 0"><span style="width:44px;color:#333">주　소</span>：<span style="margin-left:4px;word-break:break-all">${escapeHtml(buyer.addr||'—')}</span></div>
-            <div style="display:flex;font-size:9px;padding:1.5px 0"><span style="width:44px;color:#333">전화번호</span>：<span style="margin-left:4px">${escapeHtml(buyer.tel||'—')}</span></div>
+            <div style="display:flex;font-size:9.5px;padding:2px 0"><span style="width:44px;color:#333">일　자</span>：<span style="margin-left:4px">${escapeHtml(date)}</span></div>
+            <div style="display:flex;font-size:9.5px;padding:2px 0"><span style="width:44px;color:#333">거래처</span>：<span style="margin-left:4px;font-weight:600">${escapeHtml(buyerName)}</span></div>
+            <div style="display:flex;font-size:9.5px;padding:2px 0"><span style="width:44px;color:#333">주　소</span>：<span style="margin-left:4px;word-break:break-all">${escapeHtml(buyer.addr||'—')}</span></div>
+            <div style="display:flex;font-size:9.5px;padding:2px 0"><span style="width:44px;color:#333">전화번호</span>：<span style="margin-left:4px">${escapeHtml(buyer.tel||'—')}</span></div>
           </div>
           <div style="border:1.5px solid #000;display:flex;align-items:stretch;margin-top:4px">
             <span style="background:#e8e8e8;padding:4px 8px;font-weight:700;font-size:9px;border-right:1px solid #000;display:flex;align-items:center">합계금액</span>
-            <span style="flex:1;text-align:right;padding:4px 8px;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:flex-end">${Number(total).toLocaleString()}</span>
+            <span style="flex:1;text-align:right;padding:4px 8px;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:flex-end">${Number(total).toLocaleString()}</span>
           </div>
         </div>
         <!-- 우측: 공급자 정보 -->
         <div style="width:46%;border:1px solid #333;position:relative;flex-shrink:0">
-          <div style="background:#e0e0e0;border-bottom:1px solid #333;padding:2px 6px;font-size:8.5px;font-weight:700;text-align:center;letter-spacing:1px">공　급　자</div>
+          <div style="background:#e0e0e0;border-bottom:1px solid #333;padding:2px 6px;font-size:9px;font-weight:700;text-align:center;letter-spacing:1px">공　급　자</div>
           <div style="padding:3px 5px">
-            ${[['등록번호',co.bizno||'—'],['상호',co.company||'—'],['대표자',co.ceo||'—'],['업태/종목',(co.biztype||'')+(co.bizitem?' / '+co.bizitem:'')],['주소',co.addr||'—'],['전화번호',co.tel||'—']].map(([l,v])=>`<div style="display:flex;font-size:8.5px;padding:1px 0;border-bottom:1px solid #eee"><span style="width:52px;color:#555;flex-shrink:0;font-weight:600">${l}</span><span style="word-break:break-all">${escapeHtml(v)}</span></div>`).join('')}
+            ${[['등록번호',co.bizno||'—'],['상호',co.company||'—'],['대표자',co.ceo||'—'],['업태/종목',(co.biztype||'')+(co.bizitem?' / '+co.bizitem:'')],['주소',co.addr||'—'],['전화번호',co.tel||'—']].map(([l,v])=>`<div style="display:flex;font-size:9px;padding:1px 0;border-bottom:1px solid #eee"><span style="width:52px;color:#555;flex-shrink:0;font-weight:600">${l}</span><span style="word-break:break-all">${escapeHtml(v)}</span></div>`).join('')}
             ${sealImageBase64?`<img src="${sealImageBase64}" alt="직인" style="position:absolute;bottom:4px;right:4px;width:56px;height:56px;object-fit:contain;opacity:0.85">`:'<div style="position:absolute;bottom:4px;right:4px;width:46px;height:46px;border:1px solid #333;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#333">(인)</div>'}
           </div>
         </div>
       </div>
 
-      <table style="width:100%;border-collapse:collapse;font-size:8.5px;margin-bottom:4px;table-layout:fixed">
+      <table style="width:100%;border-collapse:collapse;font-size:9px;margin-bottom:4px;table-layout:fixed">
         <colgroup>
           <col style="width:36px">
           <col>
@@ -1576,21 +1576,21 @@ function buildInvoiceHTML(items, cur, extraData){
           <col style="width:44px">
         </colgroup>
         <thead><tr>
-          <th style="background:#e8e8e8;border:1px solid #333;padding:4px 2px;text-align:center;text-transform:none;font-size:8px">월일</th>
-          <th style="background:#e8e8e8;border:1px solid #333;padding:4px 6px;text-align:center;font-size:8px">품　목　명</th>
-          <th style="background:#e8e8e8;border:1px solid #333;padding:4px 2px;text-align:center;font-size:8px">수량</th>
-          <th style="background:#e8e8e8;border:1px solid #333;padding:4px 4px;text-align:center;font-size:8px">단가</th>
-          <th style="background:#e8e8e8;border:1px solid #333;padding:4px 4px;text-align:center;font-size:8px">공급가액</th>
-          <th style="background:#e8e8e8;border:1px solid #333;padding:4px 4px;text-align:center;font-size:8px">부가세</th>
-          <th style="background:#e8e8e8;border:1px solid #333;padding:4px 4px;text-align:center;font-size:8px">비고</th>
+          <th style="background:#e8e8e8;border:1px solid #333;padding:4px 2px;text-align:center;text-transform:none;font-size:8.5px">월일</th>
+          <th style="background:#e8e8e8;border:1px solid #333;padding:4px 6px;text-align:center;font-size:8.5px">품　목　명</th>
+          <th style="background:#e8e8e8;border:1px solid #333;padding:4px 2px;text-align:center;font-size:8.5px">수량</th>
+          <th style="background:#e8e8e8;border:1px solid #333;padding:4px 4px;text-align:center;font-size:8.5px">단가</th>
+          <th style="background:#e8e8e8;border:1px solid #333;padding:4px 4px;text-align:center;font-size:8.5px">공급가액</th>
+          <th style="background:#e8e8e8;border:1px solid #333;padding:4px 4px;text-align:center;font-size:8.5px">부가세</th>
+          <th style="background:#e8e8e8;border:1px solid #333;padding:4px 4px;text-align:center;font-size:8.5px">비고</th>
         </tr></thead>
         <tbody>
           ${items.map((it,i)=>{
             const rowVat=cur==='KRW'?Math.round(it.amount*.1):0;
             const bg=i%2===1?'#f2f2f2':'#fff';
             const nameWithSpec=it.spec?`${it.name} (${it.spec})`:it.name;
-            return `<tr style="height:18px;background:${bg}">
-              <td style="border:1px solid #333;padding:2px;text-align:center;font-size:8px">${escapeHtml(dateShort)}</td>
+            return `<tr style="height:22px;background:${bg}">
+              <td style="border:1px solid #333;padding:2px;text-align:center;font-size:8.5px">${escapeHtml(dateShort)}</td>
               <td style="border:1px solid #333;padding:2px 5px;word-break:break-all">${escapeHtml(nameWithSpec)}</td>
               <td style="border:1px solid #333;padding:2px;text-align:center">${Number(it.qty).toLocaleString()}</td>
               <td style="border:1px solid #333;padding:2px 4px;text-align:right">${Number(it.unitPrice).toLocaleString()}</td>
@@ -1602,7 +1602,7 @@ function buildInvoiceHTML(items, cur, extraData){
           ${Array(empty).fill(0).map((_,idx)=>{
             const rowIdx=items.length+idx;
             const bg=rowIdx%2===1?'#f2f2f2':'#fff';
-            return `<tr style="height:18px;background:${bg}">
+            return `<tr style="height:22px;background:${bg}">
             <td style="border:1px solid #333;padding:2px">&nbsp;</td>
             <td style="border:1px solid #333"></td>
             <td style="border:1px solid #333"></td>
@@ -1615,14 +1615,14 @@ function buildInvoiceHTML(items, cur, extraData){
         </tbody>
       </table>
       <div style="border:1px solid #333;border-radius:2px;overflow:hidden;margin-bottom:3px">
-        <div style="display:flex;border-bottom:1px solid #333"><span style="width:68px;padding:2px 6px;font-size:8.5px;color:#333;border-right:1px solid #333;font-weight:600">공급가액</span><span style="flex:1;padding:2px 6px;font-size:8.5px;text-align:right">${Number(sub).toLocaleString()}</span></div>
-        ${cur==='KRW'?`<div style="display:flex;border-bottom:1px solid #333"><span style="width:68px;padding:2px 6px;font-size:8.5px;color:#333;border-right:1px solid #333;font-weight:600">부가세</span><span style="flex:1;padding:2px 6px;font-size:8.5px;text-align:right">${Number(vat).toLocaleString()}</span></div>`:''}
-        <div style="display:flex;background:#e0e0e0;font-weight:700"><span style="width:68px;padding:2px 6px;font-size:8.5px;border-right:1px solid #333">합계${cur!=='KRW'?' ('+cur+')':''}</span><span style="flex:1;padding:2px 6px;font-size:8.5px;text-align:right">${Number(total).toLocaleString()}</span></div>
+        <div style="display:flex;border-bottom:1px solid #333"><span style="width:68px;padding:2px 6px;font-size:9px;color:#333;border-right:1px solid #333;font-weight:600">공급가액</span><span style="flex:1;padding:2px 6px;font-size:9px;text-align:right">${Number(sub).toLocaleString()}</span></div>
+        ${cur==='KRW'?`<div style="display:flex;border-bottom:1px solid #333"><span style="width:68px;padding:2px 6px;font-size:9px;color:#333;border-right:1px solid #333;font-weight:600">부가세</span><span style="flex:1;padding:2px 6px;font-size:9px;text-align:right">${Number(vat).toLocaleString()}</span></div>`:''}
+        <div style="display:flex;background:#e0e0e0;font-weight:700"><span style="width:68px;padding:2px 6px;font-size:9px;border-right:1px solid #333">합계${cur!=='KRW'?' ('+cur+')':''}</span><span style="flex:1;padding:2px 6px;font-size:9px;text-align:right">${Number(total).toLocaleString()}</span></div>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:flex-end">
         <div style="flex:1">
-          ${note?`<div style="font-size:8px;color:#555;margin-top:2px">비고: ${escapeHtml(note)}</div>`:''}
-          <div style="font-size:8px;color:#666;margin-top:1px">${escapeHtml(footer)}</div>
+          ${note?`<div style="font-size:8.5px;color:#555;margin-top:2px">비고: ${escapeHtml(note)}</div>`:''}
+          <div style="font-size:8.5px;color:#666;margin-top:1px">${escapeHtml(footer)}</div>
         </div>
         <div style="width:120px;text-align:right;font-size:10px;font-weight:700;padding-bottom:2px">
           인수자: ${escapeHtml(receiver||'__________')} (인)
