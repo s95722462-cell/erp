@@ -628,15 +628,6 @@
 
     <!-- 설정 -->
     <div class="panel" id="panel-settings">
-      <!-- 테스터 도구 -->
-      <div class="card">
-        <div class="card-title">🧪 테스터 도구</div>
-        <div style="font-size:13px;color:var(--text2);margin-bottom:12px">앱 테스트를 위해 가짜 데이터를 생성할 수 있습니다. (기존 데이터와 함께 섞여서 추가됩니다.)</div>
-        <div class="btn-row">
-          <button class="btn btn-ai" onclick="generateSampleData()">📊 샘플 데이터 생성 (6개월치)</button>
-          <button class="btn btn-danger" onclick="resetCurrentCompanyData()">🗑 샘플 데이터 초기화</button>
-        </div>
-      </div>
 
       <!-- 회사 목록 -->
       <div class="card">
@@ -846,6 +837,6 @@
 <button class="btn btn-primary fixed-save-btn" id="fixed-save-sale" onclick="saveErpData('sale')">💾 매출 내역 저장</button>
 <button class="btn btn-primary fixed-save-btn" id="fixed-save-buy" onclick="saveErpData('buy')">💾 매입 내역 저장</button>
 
-<script src="app.js?v=20260730_audit2"></script>
+<script src="app.js?v=20260730_nosample"></script>
 </body>
 </html>
